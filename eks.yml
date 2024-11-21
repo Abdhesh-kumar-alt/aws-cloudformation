@@ -1,0 +1,257 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "apt-eks-stack"
+Parameters:
+  ClusterName:
+    Description: The cluster name provided when the cluster was created.
+    Default: apt-dev-eks-cluster #CHANGEIT
+    Type: String
+  ClusterVersion:
+    Description: Cluster Version to be required.
+    Type: String
+    Default: "1.25" #CHANGEIT    
+  Nodegroup1Name:
+    Description: Node Group 1 Name 
+    Type: String
+    Default: apt-dev-eks-ng-1
+  Nodegroup2Name:
+    Description: Node Group 2 Name 
+    Type: String
+    Default: apt-dev-eks-ng-2    
+  VpcId:
+    Description: The VPC of the worker instances
+    Type: String
+    Default: "vpc-0e3a2694336315737" #CHANGEIT
+  ControlePlaneSGName:
+    Description: ControlPlane security group Name
+    Type: String
+    Default: apt-dev-eks-controlplane-sg  
+  WorkerNodeSGName:
+    Description: WorkerNode security group Name
+    Type: String
+    Default: apt-dev-eks-ng-sg  
+  SubnetId1:
+    Description: Select the subnets where workers can be created.
+    Type: String
+    Default: "subnet-04d9237857c463aa7"  #CHANGEIT
+  SubnetId2:
+    Description: Select the subnets where workers can be created.
+    Type: String
+    Default: "subnet-0c500765df0e514fc"  #CHANGEIT
+  ServiceIp: 
+    Description: Service IPv4 
+    Type: String
+    Default: "10.100.0.0/16"  
+  Amitype:
+    Description: nodegroup machine type.
+    Type: String
+    Default: "AL2_x86_64" #CHANGE IT
+  InstanceTypes:
+    Description: nodegroup machine type.
+    Type: String
+    Default: "t3.medium" #CHANGE IT
+  Capacitytype:
+    Type: String
+    Description: capacity type of node group.
+    Default: "ON_DEMAND" #CHANGEIT
+  MinNodes:
+    Type: String
+    Description: min nodes  of node group.
+    Default: "1"  #CHANGEIT
+  MaxNodes:
+    Type: String
+    Description: max nodes of node group.
+    Default: "2" #CHANGEIT
+  DesiredNodes:
+    Type: String
+    Description: desired number of node group.
+    Default: "1" #CHANGEIT
+  Privateaccess:
+    Type: String
+    Description: Private access to the cluster.
+    Default: "true"   #CHANGEIT 
+  Publicaccess:
+    Type: String
+    Description: Private access to the cluster.
+    Default: "false"   #CHANGEIT  
+  StackNameExport:
+    Type: String
+    Description: "Name of stack from where ARN is exported"
+    Default: apt-iam-stack      
+  TagKey1:
+    Type: String
+    Description: "Tag Key"
+    Default: env
+  TagValue1:
+    Type: String
+    Description: "Tag Value"
+    Default: dev
+  TagKey2:
+    Type: String
+    Description: "Tag Key"
+    Default: cost_center
+  TagValue2:
+    Type: String
+    Description: "Tag Value"
+    Default: apt    
+Resources:
+    EKSCluster:
+        Type: "AWS::EKS::Cluster"
+        Properties:
+            Name: !Ref ClusterName
+            RoleArn: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-EksRoleArn'
+            #RoleArn: "arn:aws:iam::621026974300:role/smartanalyst-asset-prioritization-eks-admin-role"
+            Version: !Ref ClusterVersion
+            ResourcesVpcConfig: 
+                SecurityGroupIds: 
+                  - !Ref ControlPlaneSecurityGroup
+                SubnetIds: 
+                  - !Ref SubnetId1
+                  - !Ref SubnetId2
+                EndpointPublicAccess: !Ref Publicaccess
+                EndpointPrivateAccess: !Ref Privateaccess                  
+            KubernetesNetworkConfig: 
+                ServiceIpv4Cidr: !Ref ServiceIp
+            Tags:
+              - Key: !Ref TagKey1
+                Value: !Ref TagValue1
+              - Key: !Ref TagKey2 
+                Value: !Ref TagValue2
+
+#Security group for eks cluster.  
+    ControlPlaneSecurityGroup:
+      Type: "AWS::EC2::SecurityGroup"
+      Properties:
+        GroupDescription: "Build a custom security group."
+        VpcId: !Ref VpcId
+        SecurityGroupEgress:
+          - FromPort: 0
+            ToPort: 0
+            IpProtocol: "-1"
+            Description: ""
+            CidrIp: "0.0.0.0/0"
+        SecurityGroupIngress:
+          - FromPort: 0
+            ToPort: 0
+            IpProtocol: "-1"
+            Description: ""
+            CidrIp: "0.0.0.0/0"
+        GroupName: !Ref ControlePlaneSGName
+        Tags:
+          - Key: !Ref TagKey1
+            Value: !Ref TagValue1
+          - Key: !Ref TagKey2 
+            Value: !Ref TagValue2
+    EKSNodegroup1:
+        Type: "AWS::EKS::Nodegroup"
+        Properties:
+            NodegroupName: !Ref Nodegroup1Name
+            ClusterName: !Ref ClusterName
+            Version: !Ref ClusterVersion
+            ReleaseVersion: "1.25.7-20230322"
+            ScalingConfig: 
+                MinSize: !Ref MinNodes
+                MaxSize: !Ref MaxNodes
+                DesiredSize: 1
+            InstanceTypes: 
+              - !Ref InstanceTypes
+            Subnets: 
+              - !Ref SubnetId1
+              - !Ref SubnetId2
+            AmiType: !Ref Amitype
+            NodeRole: !ImportValue 
+                      'Fn::Sub': '${StackNameExport}-NodeRoleArn'
+            #NodeRole: "arn:aws:iam::621026974300:role/smartanalyst-asset-prioritization-dev-cluster-ng-role"
+            Labels: {}
+            DiskSize: 50
+            Tags: {
+        "env": "dev", "cost_center": "apt", "Name": "apt_ec2_eks_ng01",
+                  }
+
+              #Key: Value
+              #- Key: !Ref TagKey1
+              #  Value: !Ref TagValue1
+              #- Key: !Ref TagKey2 
+              #  Value: !Ref TagValue2
+            CapacityType: !Ref Capacitytype
+        DependsOn: EKSCluster    
+
+    EKSNodegroup2:
+        Type: "AWS::EKS::Nodegroup"
+        Properties:
+            NodegroupName: !Ref Nodegroup2Name
+            ClusterName: !Ref ClusterName
+            Version: !Ref ClusterVersion
+            ReleaseVersion: "1.25.6-20230304"
+            ScalingConfig: 
+                MinSize: !Ref MinNodes
+                MaxSize: !Ref MaxNodes
+                DesiredSize: 1
+            InstanceTypes: 
+              - !Ref InstanceTypes
+            Subnets: 
+              - !Ref SubnetId1
+              - !Ref SubnetId2
+            AmiType: !Ref Amitype
+            NodeRole: !ImportValue 
+                      'Fn::Sub': '${StackNameExport}-NodeRoleArn'
+            #NodeRole: "arn:aws:iam::621026974300:role/smartanalyst-asset-prioritization-dev-cluster-ng-role"          
+            Labels: {}
+            DiskSize: 50
+            Tags: {
+        "env": "dev", "cost_center": "apt", "Name": "apt_ec2_eks_ng02", 
+                  }
+              #- Key: !Ref TagKey1
+              #  Value: !Ref TagValue1
+              #- Key: !Ref TagKey2 
+              #  Value: !Ref TagValue2
+            CapacityType: !Ref Capacitytype
+        DependsOn: EKSCluster
+
+    WorkerNodesSecurityGroup:
+      Type: "AWS::EC2::SecurityGroup"
+      Properties:
+        GroupDescription: "Worker Nodes SG"
+        VpcId: !Ref VpcId
+        SecurityGroupEgress:
+          - FromPort: 0
+            ToPort: 0
+            IpProtocol: "-1"
+            Description: ""
+            CidrIp: "0.0.0.0/0"
+        SecurityGroupIngress:
+          - FromPort: 0
+            ToPort: 0
+            IpProtocol: "-1"
+            Description: ""
+            CidrIp: "0.0.0.0/0"
+        GroupName: !Ref WorkerNodeSGName
+        Tags:
+          - Key: !Ref TagKey1
+            Value: !Ref TagValue1
+          - Key: !Ref TagKey2 
+            Value: !Ref TagValue2
+
+    EKSAddon:
+        Type: "AWS::EKS::Addon"
+        Properties:
+            AddonName: "kube-proxy"
+            AddonVersion: "v1.25.6-eksbuild.1"
+            ClusterName: !Ref ClusterName
+        DependsOn: EKSCluster
+
+    EKSAddon2:
+        Type: "AWS::EKS::Addon"
+        Properties:
+            AddonName: "coredns"
+            AddonVersion: "v1.9.3-eksbuild.2"
+            ClusterName: !Ref ClusterName
+        DependsOn: EKSCluster
+
+    EKSAddon3:
+        Type: "AWS::EKS::Addon"
+        Properties:
+            AddonName: "vpc-cni"
+            AddonVersion: "v1.12.2-eksbuild.1"
+            ClusterName: !Ref ClusterName
+        DependsOn: EKSCluster

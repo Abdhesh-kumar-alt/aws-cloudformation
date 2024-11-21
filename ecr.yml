@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "ecr repos"
+Parameters:
+  ECR1:
+    Description: frontend ecr
+    Default: "apt-dev-ecr-frontend"
+    Type: String
+  ECR2:
+    Description: airflow ecr
+    Type: String
+    Default: "apt-dev-ecr-airflow"
+  ECR3:
+    Description: backend ecr
+    Type: String
+    Default: "apt-dev-ecr-backend"
+  TagKey1:
+    Type: String
+    Description: "Tag Key"
+    Default: env
+  TagValue1:
+    Type: String
+    Description: "Tag Value"
+    Default: dev
+  TagKey2:
+    Type: String
+    Description: "Tag Key"
+    Default: cost_center
+  TagValue2:
+    Type: String
+    Description: "Tag Value"
+    Default: apt        
+Resources:
+    ECRRepository:
+        Type: "AWS::ECR::Repository"
+        Properties:
+            RepositoryName: !Ref ECR1
+            Tags:
+              - Key: !Ref TagKey1
+                Value: !Ref TagValue1
+              - key: !Ref TagKey2 
+                Value: !Ref TagValue2            
+    ECRRepository2:
+        Type: "AWS::ECR::Repository"
+        Properties:
+            RepositoryName: !Ref ECR2
+            Tags:
+              - Key: !Ref TagKey1
+                Value: !Ref TagValue1
+              - key: !Ref TagKey2 
+                Value: !Ref TagValue2                        
+
+    ECRRepository3:
+        Type: "AWS::ECR::Repository"
+        Properties:
+            RepositoryName: !Ref ECR3
+            Tags:
+              - Key: !Ref TagKey1
+                Value: !Ref TagValue1
+              - key: !Ref TagKey2 
+                Value: !Ref TagValue2                        

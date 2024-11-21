@@ -1,0 +1,729 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ""
+Parameters:
+### GLUE JOB PARAMS ###
+  BucketName:
+    Type: String
+    Description: "Bucket Name"
+    Default: inizio-adv
+  GlueJobScriptLocation:
+    Type: String
+    Description: "Glue Job Script Location"
+    Default: artifacts/aws-glue-assets/script
+  GlueJobTempDir:
+   Type: String
+   Description: "Glue Job Temp Directory"
+   Default: artifacts/aws-glue-assets/temporary
+  Glueversion:
+   Type: String
+   Description: "Glue Version"
+   Default: "3.0"
+  Numberofworkers:
+   Type: Number
+   Description: "Number of Workers"
+   Default: 10 
+  Workertype: 
+   Type: String
+   Description: "Worker Type"
+   Default: "G.1X"
+  StackNameExport:
+    Type: String
+    Description: "Name of stack from where ARN is exported"
+    Default: apt-iam-stack       
+  TagKey1:
+    Type: String
+    Description: "Tag Key"
+    Default: env
+  TagValue1:
+    Type: String
+    Description: "Tag Value"
+    Default: dev
+  TagKey2:
+    Type: String
+    Description: "Tag Key"
+    Default: cost_center
+  TagValue2:
+    Type: String
+    Description: "Tag Value"
+    Default: apt
+  ENV:
+    Type: String
+    Description: "env naming convention"
+    Default: apt-dev-glue-job 
+
+  
+Resources:
+    GlueJob:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-cleanlayer-cttrials" 
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-cleanlayer-cttrials.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --enable-job-insights: "true"
+                --enable-glue-datacatalog: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --CURR_DATE: "2023-07-11"
+                --job-language: "python"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 2880
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2       
+
+    GlueJob2:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-cleanlayer-deal"
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-cleanlayer-deal.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --SCHEMA: "dbo"
+                --TABLENAME: "deal"
+                --CURRDATE: "2023-06-05"
+                --enable-glue-datacatalog: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --SOURCE: "bmt"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+                --DEST_BUCKETNAME: !Sub "${BucketName}/data/cleansed"
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --SOURCE_BUCKETNAME: !Sub "${BucketName}/data/raw"
+                --enable-job-insights: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-language: "python"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 120
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2               
+
+    GlueJob3:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-cleanlayer-drug"
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-cleanlayer-drug.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --SCHEMA: "dbo"
+                --TABLENAME: "drug"
+                --CURRDATE: "2023-07-10"
+                --enable-glue-datacatalog: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --SOURCE: "pharma"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+                --DEST_BUCKETNAME: !Sub "${BucketName}/data/cleansed"
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --SOURCE_BUCKETNAME: !Sub "${BucketName}/data/raw"
+                --enable-job-insights: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-language: "python"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 120
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2   
+
+    GlueJob4:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-cleanlayer-drugcompany"
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-cleanlayer-drugcompany.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --SCHEMA: "dbo"
+                --TABLENAME: "drugcompany"
+                --CURRDATE: "2023-06-05"
+                --enable-glue-datacatalog: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --SOURCE: "pharma"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+                --DEST_BUCKETNAME: !Sub "${BucketName}/data/cleansed"
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --SOURCE_BUCKETNAME: !Sub "${BucketName}/data/raw"
+                --enable-job-insights: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-language: "python"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 120
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2   
+
+    GlueJob5:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-cleanlayer-drugevent"
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-cleanlayer-drugevent.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --SCHEMA: "dbo"
+                --TABLENAME: "drugevent"
+                --CURRDATE: "2023-06-05"
+                --enable-glue-datacatalog: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --SOURCE: "bmt"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+                --DEST_BUCKETNAME: !Sub "${BucketName}/data/cleansed"
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --SOURCE_BUCKETNAME: !Sub "${BucketName}/data/raw"
+                --enable-job-insights: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-language: "python"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 120
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2   
+
+    GlueJob6:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-cleanlayer-drugeventcompany"
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-cleanlayer-drugeventcompany.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --SCHEMA: "dbo"
+                --TABLENAME: "drugeventcompany"
+                --CURRDATE: "2023-06-05"
+                --enable-glue-datacatalog: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --SOURCE: "bmt"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+                --DEST_BUCKETNAME: !Sub "${BucketName}/data/cleansed"
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --SOURCE_BUCKETNAME: !Sub "${BucketName}/data/raw"
+                --enable-job-insights: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-language: "python"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 120
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2   
+
+    GlueJob7:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-cleanlayer-drugeventprofile"
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-cleanlayer-drugeventprofile.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --SCHEMA: "dbo"
+                --TABLENAME: "drugeventprofile"
+                --CURRDATE: "2023-07-10"
+                --enable-glue-datacatalog: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --SOURCE: "bmt"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+                --DEST_BUCKETNAME: !Sub "${BucketName}/data/cleansed"
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --SOURCE_BUCKETNAME: !Sub "${BucketName}/data/raw"
+                --enable-job-insights: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-language: "python"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 120
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2   
+
+    GlueJob8:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-cleanlayer-drugprogram"
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-cleanlayer-drugprogram.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --SCHEMA: "dbo"
+                --TABLENAME: "drugprogram"
+                --CURRDATE: "2023-06-05"
+                --enable-glue-datacatalog: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --SOURCE: "pharma"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+                --DEST_BUCKETNAME: !Sub "${BucketName}/data/cleansed"
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --SOURCE_BUCKETNAME: !Sub "${BucketName}/data/raw"
+                --enable-job-insights: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-language: "python"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 120
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2   
+
+    GlueJob9:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-cleanlayer-trial"
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-cleanlayer-trial.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --SCHEMA: "dbo"
+                --TABLENAME: "trial"
+                --CURRDATE: "2023-07-10"
+                --enable-glue-datacatalog: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --SOURCE: "trialtrove"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+                --DEST_BUCKETNAME: !Sub "${BucketName}/data/cleansed"
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --SOURCE_BUCKETNAME: !Sub "${BucketName}/data/raw"
+                --enable-job-insights: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-language: "python"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 120
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2   
+
+    GlueJob10:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-consumptionlayer"
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-consumptionlayer.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --TABLENAME: "aggregated_assets_ui"
+                --CURRDATE: "2023-07-10"
+                --enable-glue-datacatalog: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --DEST_DIR: "data/curated"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+                --DEST_BUCKETNAME: !Sub "${BucketName}"
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --enable-job-insights: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --TABLEPATH_FILENAME: "artifacts/CuratedLayer_GlueJob_artifacts/dependencies.txt"
+                --job-language: "python"
+                --QUERIES_FILENAME: "artifacts/ConsumptionLayer_GlueJob_artifacts/consumptionLayerQueries.txt"
+                --ARTIFACTS_BUCKET_NAME: "inizio-adv"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 120
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2   
+
+    GlueJob11:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-curatedlayer"
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 20
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-curatedlayer.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --TABLENAME: "filtered_drugs"
+                --CURRDATE: "2023-07-10"
+                --enable-glue-datacatalog: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --DEST_DIR: "data/curated"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+                --DEST_BUCKETNAME: !Sub "${BucketName}"
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --enable-job-insights: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --TABLEPATH_FILENAME: "artifacts/CuratedLayer_GlueJob_artifacts/dependencies.txt"
+                --job-language: "python"
+                --QUERIES_FILENAME: "artifacts/CuratedLayer_GlueJob_artifacts/curatedLayerQueries.txt"
+                --ARTIFACTS_BUCKET_NAME: "inizio-adv"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 120
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2   
+
+    GlueJob12:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-dataloadingscript"
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 10
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-dataloadingscript.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --BUCKET_NAME: "inizio-adv"
+                --SCHEMA: "dbo"
+                --TABLENAME: "drugevent"
+                --CONFIGURATION_FILE_BUCKET: "inizio-adv"
+                --enable-glue-datacatalog: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --CURR_DATE: "2023-07-10"
+                --SOURCE: "bmt"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+                --API_URL_ENDPOINT_MAP: !Sub "${BucketName}/artifacts/DataLoadingScript_GlueJob_artifacts/apiURLEndpointMap.csv"
+                --CONFIGURATION_FILE_KEY: "artifacts/DataLoadingScript_GlueJob_artifacts/configuration_file/config.ini"
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --enable-job-insights: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-language: "python"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 2880
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2   
+
+    GlueJob13:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-dataloadingscript-cttrials"
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 30
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-dataloadingscript-cttrials.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --enable-job-insights: "true"
+                --additional-python-modules: "pytrials"
+                --enable-glue-datacatalog: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --CURR_DATE: "2023-07-11"
+                --job-language: "python"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+                --path: !Sub "${BucketName}/artifacts/cttrials_Batch/Batch0.parquet"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 2880
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2   
+
+    GlueJob14:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-fetchnctidfromtrial"
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-fetchnctidfromtrial.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --enable-job-insights: "true"
+                --enable-glue-datacatalog: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --CURR_DATE: "2023-07-10"
+                --job-language: "python"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 2880
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2   
+
+    GlueJob15:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-helper-drugtarget"
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-helper-drugtarget.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --SCHEMA: "dbo"
+                --TABLENAME: "target"
+                --CURRDATE: "2023-07-10"
+                --enable-glue-datacatalog: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --SOURCE: "helper"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+                --DEST_BUCKETNAME: !Sub "${BucketName}/data/cleansed"
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --SOURCE_BUCKETNAME: !Sub "${BucketName}/data/raw"
+                --enable-job-insights: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-language: "python"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 120
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2   
+
+    GlueJob16:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-rawlayer"
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 20
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-rawlayer.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --SCHEMA: "dbo"
+                --TABLENAME: "drugeventprofile"
+                --CURRDATE: "2023-07-10"
+                --SOURCE_DIR: "apt_landing"
+                --enable-glue-datacatalog: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --SOURCE: "bmt"
+                --DEST_DIR: "data/raw"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+                --DEST_BUCKETNAME: !Sub "${BucketName}"
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --SOURCE_BUCKETNAME: !Sub "${BucketName}"
+                --enable-job-insights: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-language: "python"
+                --QUERIES_FILENAME: "artifacts/RawLayer_GlueJob_artifacts/rawLayerQueries.txt"
+                --ARTIFACTS_BUCKET_NAME: "inizio-adv"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 120
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2   
+
+    GlueJob17:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-rawlayer-cttrials"
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-rawlayer-cttrials.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --enable-job-insights: "true"
+                --enable-glue-datacatalog: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --CURR_DATE: "2023-07-11"
+                --job-language: "python"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 2880
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2   
+
+    GlueJob18:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Sub "${ENV}-sourcetolandingcountvalidation"
+            Description: ""
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Sub "s3://${BucketName}/${GlueJobScriptLocation}/apt-glue-job-sourcetolandingcountvalidation.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --ARTIFACTS_DIR: "artifacts"
+                --SOURCE_DIR: "data/raw"
+                --CONFIGURATION_FILE_BUCKET: "inizio-adv"
+                --enable-glue-datacatalog: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --CURR_DATE: "2023-07-10"
+                --TempDir: !Sub "s3://${BucketName}/${GlueJobTempDir}/"
+                --CONFIGURATION_FILE_KEY: "artifacts/DataLoadingScript_GlueJob_artifacts/configuration_file/config.ini"
+                --spark-event-logs-path: !Sub "s3://${BucketName}/logs/sparkHistoryLogs/"
+                --SOURCE_BUCKETNAME: !Sub "${BucketName}"
+                --enable-job-insights: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-language: "python"
+                --ARTIFACTS_BUCKET_NAME: "inizio-adv"
+            MaxRetries: 0
+            #AllocatedCapacity: 10
+            Timeout: 120
+            GlueVersion: !Ref Glueversion
+            #MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2   

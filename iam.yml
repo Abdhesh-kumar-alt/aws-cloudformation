@@ -1,0 +1,222 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "apt-iam-stack"
+Parameters:
+  GlueIAMRole:
+    Type: String
+    Description: "GLUE IAM ROLE NAME"
+    Default: apt-iam-glue-role
+  RedshiftIAMRole:
+    Type: String
+    Description: "REDSHIFT IAM ROLE NAME"
+    Default: apt-iam-redshift-role
+  LambdaIAMRole:
+    Type: String
+    Description: "LAMBDA IAM ROLE NAME"
+    Default: apt-iam-lambda-role
+  NodeIAMRole:
+    Type: String
+    Description: "EKS NODE IAM ROLE NAME"
+    Default: apt-iam-eks-node-role
+  EKSIAMPolicy:
+    Type: String
+    Description: "EKS MANAGED POLICY NAME - EKS FULL ACCESS"
+    Default: apt-iam-eks-master-policy
+  EKSIAMRole:
+    Type: String
+    Description: "EKS Role"
+    Default: apt-iam-eks-master-role   
+  InstanceProfile:
+    Type: String
+    Description: "InstanceProfile name"
+    Default: apt-iam-instance-profile    
+  TagKey1:
+    Type: String
+    Description: "Tag Key"
+    Default: env
+  TagValue1:
+    Type: String
+    Description: "Tag Value"
+    Default: dev
+  TagKey2:
+    Type: String
+    Description: "Tag Key"
+    Default: cost_center
+  TagValue2:
+    Type: String
+    Description: "Tag Value"
+    Default: apt    
+Resources:
+    GlueRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/"
+            RoleName: !Ref GlueIAMRole
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"glue.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            ManagedPolicyArns: 
+              - "arn:aws:iam::aws:policy/AmazonRedshiftFullAccess"
+              - "arn:aws:iam::aws:policy/AWSGlueConsoleSageMakerNotebookFullAccess"
+              - "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
+              - "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
+              - "arn:aws:iam::aws:policy/service-role/AWSGlueServiceNotebookRole"
+              - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+              - "arn:aws:iam::aws:policy/service-role/AwsGlueSessionUserRestrictedNotebookServiceRole"
+              - "arn:aws:iam::aws:policy/service-role/AmazonSageMakerServiceCatalogProductsGlueServiceRolePolicy"
+              - "arn:aws:iam::aws:policy/AwsGlueSessionUserRestrictedNotebookPolicy"
+            Description: "Allows Glue to call AWS services on your behalf. "
+            Tags:
+              - Key: !Ref TagKey1
+                Value: !Ref TagValue1
+              - Key: !Ref TagKey2 
+                Value: !Ref TagValue2
+
+    RedshiftRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/"
+            RoleName: !Ref RedshiftIAMRole
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"redshift.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            ManagedPolicyArns: 
+              - "arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess"
+              - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+              - "arn:aws:iam::aws:policy/AmazonRedshiftAllCommandsFullAccess"
+                #- "arn:aws:iam::aws:policy/aws-service-role/AmazonRedshiftServiceLinkedRolePolicy"
+            Description: "Allows Redshift clusters to call AWS services on your behalf."
+            Tags:
+              - Key: !Ref TagKey1
+                Value: !Ref TagValue1
+              - Key: !Ref TagKey2 
+                Value: !Ref TagValue2
+
+
+    NodeRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/"
+            RoleName: !Ref NodeIAMRole
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"ec2.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"},{\"Sid\":\"Statement1\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"redshift.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            ManagedPolicyArns: 
+              - "arn:aws:iam::aws:policy/AmazonRedshiftFullAccess"
+              - "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
+              - "arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess"
+              - "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+              - "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+              - "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+              - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+              - "arn:aws:iam::aws:policy/AmazonRedshiftAllCommandsFullAccess"
+              - "arn:aws:iam::aws:policy/AmazonRedshiftDataFullAccess"
+            Description: ""
+            Tags:
+              - Key: !Ref TagKey1
+                Value: !Ref TagValue1
+              - Key: !Ref TagKey2 
+                Value: !Ref TagValue2        
+
+
+    EKSRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/"
+            RoleName: !Ref EKSIAMRole
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"eks.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"},{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"ec2.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            ManagedPolicyArns: 
+              - !Ref EKSAdminPolicy
+              - "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess"
+              - "arn:aws:iam::aws:policy/AmazonElasticFileSystemFullAccess"
+              - "arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess"
+              - "arn:aws:iam::aws:policy/AWSCodeCommitFullAccess"
+              - "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+              - "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+              - "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+              - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+            Description: ""
+            Tags:
+              - Key: !Ref TagKey1
+                Value: !Ref TagValue1
+              - Key: !Ref TagKey2 
+                Value: !Ref TagValue2
+    EKSAdminPolicy:
+        Type: "AWS::IAM::ManagedPolicy"
+        Properties:
+            ManagedPolicyName: !Ref EKSIAMPolicy
+            Path: "/"
+            PolicyDocument: |
+                {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "eks:*"
+                            ],
+                            "Resource": "*"
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": "iam:PassRole",
+                            "Resource": "*",
+                            "Condition": {
+                                "StringEquals": {
+                                    "iam:PassedToService": "eks.amazonaws.com"
+                                }
+                            }
+                        }
+                    ]
+                }
+
+    IAMInstanceProfile:
+        Type: "AWS::IAM::InstanceProfile"
+        Properties:
+            Path: "/"
+            InstanceProfileName: !Ref InstanceProfile
+            Roles: 
+              - !Ref EKSIAMRole
+        DependsOn: EKSRole      
+
+              
+
+Outputs:
+  # LambdaRole:
+  #   Description: Role
+  #   Value: !GetAtt LambdaRole.Arn
+  #   Export:
+  #     Name:
+  #       'Fn::Sub': '${AWS::StackName}-LambdaRoleArn'
+  GlueRole:
+    Description: Role
+    Value: !GetAtt GlueRole.Arn
+    Export:
+      Name:
+        'Fn::Sub': '${AWS::StackName}-GlueRoleArn'
+    
+  RedshiftRole:
+    Description: Role
+    Value: !GetAtt RedshiftRole.Arn
+    Export:
+      Name:
+        'Fn::Sub': '${AWS::StackName}-RedshiftRoleArn'
+
+  EKSRole:
+    Description: Role
+    Value: !GetAtt EKSRole.Arn
+    Export:
+      Name:
+        'Fn::Sub': '${AWS::StackName}-EksRoleArn'
+  
+  NodeRole:
+    Description: Role
+    Value: !GetAtt NodeRole.Arn
+    Export:
+      Name:
+        'Fn::Sub': '${AWS::StackName}-NodeRoleArn'
+
+  IAMInstanceProfile:
+    Description: Role
+    Value: !Ref InstanceProfile
+    Export:
+      Name:
+        'Fn::Sub': '${AWS::StackName}-InstanceProfileName'
+  

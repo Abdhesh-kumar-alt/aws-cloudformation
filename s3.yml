@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ""
+
+Parameters:
+    Bucket1Name:
+        Type: String
+        Description: "S3 Bucket name."
+        Default: inizio-dev-adv
+    Bucket2Name:
+        Type: String
+        Description: "S3 Bucket name."
+        Default: inizio-dev-artifacts    
+    TagKey:
+        Type: String
+        Description: "Tag Key"
+        Default: env
+    TagValue:
+        Type: String
+        Description: "Tag Value"
+        Default: dev
+
+
+
+
+Resources:
+    S3Bucket:
+        Type: "AWS::S3::Bucket"
+        Properties:
+            BucketName: !Ref Bucket1Name
+            BucketEncryption: 
+                ServerSideEncryptionConfiguration: 
+                  - 
+                    ServerSideEncryptionByDefault: 
+                        SSEAlgorithm: "AES256"
+                    BucketKeyEnabled: true
+            Tags:
+                -
+                    Key: !Ref TagKey
+                    Value: !Ref TagValue
+
+    S3Bucket2:
+        Type: "AWS::S3::Bucket"
+        Properties:
+            BucketName: !Ref Bucket2Name
+            BucketEncryption: 
+                ServerSideEncryptionConfiguration: 
+                  - 
+                    ServerSideEncryptionByDefault: 
+                        SSEAlgorithm: "AES256"
+                    BucketKeyEnabled: true
+            Tags:
+                -
+                    Key: !Ref TagKey
+                    Value: !Ref TagValue

@@ -1,0 +1,168 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "apt-redshift-stack"
+Parameters:
+### REDSHIFT CLUSTER PARAMS ###
+  ClusterName:
+    Type: String
+    Description: "Redshift Cluster name."
+    Default: apt-dev-redshift-cluster
+  Nodetype:  
+    Type: String
+    Description: "Redshift Cluster Node Type."
+    Default: "ra3.xlplus"   
+  Masterusername:
+    Type: String
+    Description: "Master Username."
+    Default: master                                         #change
+  Masterpassword:
+    Type: String
+    Description: "Master Password."
+    Default: Abcdefg8                                        #change
+  DataBaseName: 
+    Type: String
+    Description: "Name of DataBase."
+    Default: apt-dev-db                                         #change
+  PortNumber:
+    Type: Number
+    Description: "Port Number."
+    Default: 25439                                          #change
+  Clustertype:   
+    Type: String
+    Description: "Redshift Cluster Type."
+    Default: "multi-node"
+  SnapShotRetention:
+    Type: Number
+    Description: "Automated SnapShot Retention Period."
+    Default: 7
+  RedshiftClusterSubnetGroupName:
+    Type: String
+    Description: "Redshift Cluster Subnet Group Name"
+    Default: apt-dev-redshift-subnetgroup
+  MaintenanceWindow: 
+    Type: String
+    Description: "Redshift Cluster Preffered Maintainance Time"
+    Default: "thu:05:00-thu:05:30" 
+  Clusterversion:
+    Type: String
+    Description: "Redshift Cluster Version"
+    Default: "1.0"  
+  NumberofNodes:
+    Type: Number
+    Description: "Automated SnapShot Retention Period."
+    Default: 2
+  Subnetid1:
+    Type: String
+    Description: "Subnet id 1"
+    Default: subnet-0c500765df0e514fc
+  Subnetid2:
+    Type: String
+    Description: "Subnet id 2"
+    Default: subnet-04d9237857c463aa7
+  SecurityGroupID:
+    Type: String
+    Description: "Security group id"
+    Default: sg-09c8aa0bc5e0b5ea2
+  Vpcid:
+    Type: String
+    Description: VPC id
+    Default: vpc-0e3a2694336315737	 
+  SecurityGroupName:
+    Type: String
+    Description: Security Group Name  
+    Default: apt-dev-redshift-sg
+  TagKey1:
+    Type: String
+    Description: "Tag Key"
+    Default: env
+  TagValue1:
+    Type: String
+    Description: "Tag Value"
+    Default: dev   
+  TagKey2:
+    Type: String
+    Description: "Tag Key"
+    Default: cost_center
+  TagValue2:
+    Type: String
+    Description: "Tag Value"
+    Default: apt      
+  StackNameExport:
+    Type: String
+    Description: "Name of stack from where ARN is exported"
+    Default: apt-iam-stack
+
+Resources:
+
+
+    RedshiftCluster:
+        Type: "AWS::Redshift::Cluster"
+        Properties:
+            ClusterIdentifier: !Ref ClusterName  
+            NodeType: !Ref Nodetype
+            MasterUsername: !Ref Masterusername
+            MasterUserPassword: !Ref Masterpassword
+            DBName: !Ref DataBaseName
+            Port: !Ref PortNumber
+            ClusterType: !Ref Clustertype
+            AutomatedSnapshotRetentionPeriod: !Ref SnapShotRetention     
+            VpcSecurityGroupIds: 
+              - !Ref SecurityGroupID
+            ClusterSubnetGroupName: !Ref RedshiftClusterSubnetGroup
+            AvailabilityZone: !Sub "${AWS::Region}a"
+            PreferredMaintenanceWindow: !Ref MaintenanceWindow
+            ClusterVersion: !Ref Clusterversion
+            AllowVersionUpgrade: true
+            NumberOfNodes: !Ref NumberofNodes
+            PubliclyAccessible: false
+            Encrypted: false
+            IamRoles:
+              - !ImportValue 
+                'Fn::Sub': '${StackNameExport}-RedshiftRoleArn'
+            #IamRoles: 
+            # - "arn:aws:iam::621026974300:role/apt-redshift-role"
+            Tags:
+              - Key: !Ref TagKey1
+                Value: !Ref TagValue1
+              - Key: !Ref TagKey2 
+                Value: !Ref TagValue2     
+
+    RedshiftClusterSubnetGroup:
+        Type: "AWS::Redshift::ClusterSubnetGroup"
+        Properties:
+            Description: "redshift-subnet-group"
+            SubnetIds: 
+              - !Ref Subnetid1
+              - !Ref Subnetid2
+            Tags:
+              - Key: !Ref TagKey1
+                Value: !Ref TagValue1
+              - Key: !Ref TagKey2 
+                Value: !Ref TagValue2     
+ 
+    RedshiftSecurityGroup: 
+        Type: AWS::EC2::SecurityGroup 
+        Properties: 
+          GroupDescription: Enable port
+          GroupName : !Ref SecurityGroupName
+          VpcId: !Ref Vpcid
+          SecurityGroupIngress: 
+            - 
+              CidrIp: 0.0.0.0/0
+              FromPort: !Ref PortNumber
+              ToPort: !Ref PortNumber
+              IpProtocol: tcp 
+              Description: IP address for your dev machine 
+          Tags:
+            - Key: !Ref TagKey1
+              Value: !Ref TagValue1
+            - Key: !Ref TagKey2 
+              Value: !Ref TagValue2                    
+
+    InternalSecurityGroupIngress:
+        Type: AWS::EC2::SecurityGroupIngress
+        Properties:
+          IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          SourceSecurityGroupId: !Ref RedshiftSecurityGroup
+          GroupId: !Ref RedshiftSecurityGroup                

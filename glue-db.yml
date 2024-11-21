@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ""
+Parameters:
+### GLUE DB PARAMS ###
+  ENV:
+    Type: String
+    Description: "env naming convention"
+    Default: apt-dev-glue-db
+  TagKey1:
+    Type: String
+    Description: "Tag Key"
+    Default: env
+  TagValue1:
+    Type: String
+    Description: "Tag Value"
+    Default: dev
+  TagKey2:
+    Type: String
+    Description: "Tag Key"
+    Default: cost_center
+  TagValue2:
+    Type: String
+    Description: "Tag Value"
+    Default: apt    
+
+Resources:
+    GlueDatabase:
+        Type: "AWS::Glue::Database"
+        Properties:
+            DatabaseInput: 
+                Name: !Sub "${ENV}-cleansed"
+            CatalogId: !Ref "AWS::AccountId"
+            # Tags:
+            #   - Key: !Ref TagKey1
+            #     Value: !Ref TagValue1
+            #   - Key: !Ref TagKey2 
+            #     Value: !Ref TagValue2  
+    GlueDatabase2:
+        Type: "AWS::Glue::Database"
+        Properties:
+            DatabaseInput: 
+                Name: !Sub "${ENV}-consumption"
+            CatalogId: !Ref "AWS::AccountId"
+            # Tags:
+            #   - Key: !Ref TagKey1
+            #     Value: !Ref TagValue1
+            #   - Key: !Ref TagKey2 
+            #     Value: !Ref TagValue2              
+
+    GlueDatabase3:
+        Type: "AWS::Glue::Database"
+        Properties:
+            DatabaseInput: 
+                Name: !Sub "${ENV}-curated"
+            CatalogId: !Ref "AWS::AccountId"
+            # Tags:
+            #   - Key: !Ref TagKey1
+            #     Value: !Ref TagValue1
+            #   - Key: !Ref TagKey2 
+            #     Value: !Ref TagValue2  
+
+    GlueDatabase4:
+        Type: "AWS::Glue::Database"
+        Properties:
+            DatabaseInput: 
+                Name: !Sub "${ENV}-raw"
+            CatalogId: !Ref "AWS::AccountId"
+            # Tags:
+            #   - Key: !Ref TagKey1
+            #     Value: !Ref TagValue1
+            #   - Key: !Ref TagKey2 
+            #     Value: !Ref TagValue2  

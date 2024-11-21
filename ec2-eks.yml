@@ -1,0 +1,125 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ""
+Parameters:
+  ImageId:
+    Type: String
+    Description: ""
+    Default: ami-01cae1550c0adea9c
+  InstanceType:
+    Type: String
+    Description: ""
+    Default: t3.micro
+  KeyName:
+    Type: String
+    Description: ""
+    Default: smartanalyst-asset-prioritization-dev-res
+  Tenancy:
+    Type: String
+    Description: ""
+    Default: default
+  SubnetId:
+    Type: String
+    Description: ""
+    Default: subnet-04d9237857c463aa7
+  SecurityGroupId1:
+    Type: String
+    Description: ""
+    Default: sg-03d4d60bd773e3228
+  SecurityGroupId2:
+    Type: String
+    Description: ""
+    Default: sg-0860645cbafa56f40
+  IamInstanceProfile:
+    Type: String
+    Description: ""
+    Default: smartanalyst-asset-prioritization-eks-admin-role
+  EBSDeviceName:
+    Type: String
+    Description: ""
+    Default: /dev/xvda
+  EBSVolumeSize:
+    Type: Number
+    Description: ""
+    Default: 50
+  EBSSnapshotId:
+    Type: String
+    Description: ""
+    Default: snap-06c4c85875c4fc4ba
+  EBSVolumeType:
+    Type: String
+    Description: ""
+    Default: gp2
+  CpuCoreCount:
+    Type: Number
+    Description: ""
+    Default: 1
+  CpuThreadsPerCore:
+    Type: Number
+    Description: ""
+    Default: 2
+  TagKey1:
+    Type: String
+    Description: ""
+    Default: Name
+  TagValue1:
+    Type: String
+    Description: ""
+    Default: apt-dev-ec2-eks-admin  
+  TagKey2:
+    Type: String
+    Description: ""
+    Default: env
+  TagValue2:
+    Type: String
+    Description: ""
+    Default: dev  
+  TagKey3:
+    Type: String
+    Description: ""
+    Default: cost_center
+  TagValue3:
+    Type: String
+    Description: ""
+    Default: apt          
+
+    
+Resources:
+    EC2Instance:
+        Type: "AWS::EC2::Instance"
+        Properties:
+            ImageId: !Ref ImageId
+            InstanceType: !Ref InstanceType
+            KeyName: !Ref KeyName
+            AvailabilityZone: !Sub "${AWS::Region}b"
+            Tenancy: !Ref Tenancy
+            SubnetId: !Ref SubnetId
+            EbsOptimized: true
+            SecurityGroupIds: 
+              - !Ref SecurityGroupId1
+              - !Ref SecurityGroupId2
+            SourceDestCheck: true
+            BlockDeviceMappings: 
+              - 
+                DeviceName: !Ref EBSDeviceName
+                Ebs: 
+                    Encrypted: false
+                    VolumeSize: !Ref EBSVolumeSize
+                    #SnapshotId: !Ref EBSSnapshotId
+                    VolumeType: !Ref EBSVolumeType
+                    DeleteOnTermination: true
+            IamInstanceProfile: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-InstanceProfileName'
+            Tags:
+              - Key: !Ref TagKey1
+                Value: !Ref TagValue1
+              - Key: !Ref TagKey2 
+                Value: !Ref TagValue2
+              - Key: !Ref TagKey3 
+                Value: !Ref TagValue3  
+            HibernationOptions: 
+                Configured: false
+            CpuOptions: 
+                CoreCount: !Ref CpuCoreCount
+                ThreadsPerCore: !Ref CpuThreadsPerCore
+            EnclaveOptions: 
+                Enabled: false

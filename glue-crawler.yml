@@ -1,0 +1,234 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ""
+Parameters:
+### GLUE DB PARAMS ###
+  BucketName:
+    Type: String
+    Description: "Bucket Name"
+    Default: inizio-adv
+  CrawlerENV:
+    Type: String
+    Description: "env naming convention"
+    Default: apt-dev-glue-crawler
+  DbENV:
+    Type: String
+    Description: "env naming convention"
+    Default: apt-dev-glue-db
+  TagKey1:
+    Type: String
+    Description: "Tag Key"
+    Default: env
+  TagValue1:
+    Type: String
+    Description: "Tag Value"
+    Default: dev
+  TagKey2:
+    Type: String
+    Description: "Tag Key"
+    Default: cost_center
+  TagValue2:
+    Type: String
+    Description: "Tag Value"
+    Default: apt   
+  StackNameExport:
+    Type: String
+    Description: "Name of stack from where ARN is exported"
+    Default: apt-iam-stack          
+Resources:
+    GlueCrawler:
+        Type: "AWS::Glue::Crawler"
+        Properties:
+            Name: !Sub "${CrawlerENV}-bmt-clean"
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            Targets: 
+                S3Targets: 
+                  - 
+                    Path: !Sub "s3://${BucketName}/data/cleansed/bmt/"
+            DatabaseName: !Sub "${DbENV}-cleansed"
+            SchemaChangePolicy: 
+                UpdateBehavior: "UPDATE_IN_DATABASE"
+                DeleteBehavior: "DEPRECATE_IN_DATABASE"
+            TablePrefix: "clean_"
+            Configuration: "{\"Version\":1.0,\"CreatePartitionIndex\":true}"
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2            
+
+    GlueCrawler2:
+        Type: "AWS::Glue::Crawler"
+        Properties:
+            Name: !Sub "${CrawlerENV}-bmt-raw"
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            Targets: 
+                S3Targets: 
+                  - 
+                    Path: !Sub "s3://${BucketName}/data/raw/bmt/"
+            DatabaseName: !Sub "${DbENV}-raw"
+            SchemaChangePolicy: 
+                UpdateBehavior: "UPDATE_IN_DATABASE"
+                DeleteBehavior: "DEPRECATE_IN_DATABASE"
+            TablePrefix: "raw_"
+            Configuration: "{\"Version\":1.0,\"CreatePartitionIndex\":true}"
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2            
+
+    GlueCrawler3:
+        Type: "AWS::Glue::Crawler"
+        Properties:
+            Name: !Sub "${CrawlerENV}-consumption"
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            Targets: 
+                S3Targets: 
+                  - 
+                    Path: !Sub "s3://${BucketName}/data/consumption/"
+            DatabaseName: !Sub "${DbENV}-consumption"
+            SchemaChangePolicy: 
+                UpdateBehavior: "UPDATE_IN_DATABASE"
+                DeleteBehavior: "DEPRECATE_IN_DATABASE"
+            Configuration: "{\"Version\":1.0,\"CreatePartitionIndex\":true}"
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2
+
+    GlueCrawler4:
+        Type: "AWS::Glue::Crawler"
+        Properties:
+            Name: !Sub "${CrawlerENV}-cttrials-clean"
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            Targets: 
+                S3Targets: 
+                  - 
+                    Path: !Sub "s3://${BucketName}/data/cleansed/cttrials/"
+            DatabaseName: !Sub "${DbENV}-cleansed"
+            SchemaChangePolicy: 
+                UpdateBehavior: "UPDATE_IN_DATABASE"
+                DeleteBehavior: "DEPRECATE_IN_DATABASE"
+            TablePrefix: "clean_"
+            Configuration: "{\"Version\":1.0,\"CreatePartitionIndex\":true}"
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2
+
+    GlueCrawler5:
+        Type: "AWS::Glue::Crawler"
+        Properties:
+            Name: !Sub "${CrawlerENV}-cttrials-raw"
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            Targets: 
+                S3Targets: 
+                  - 
+                    Path: !Sub "s3://${BucketName}/data/raw/cttrials/"
+            DatabaseName: !Sub "${DbENV}-raw"
+            SchemaChangePolicy: 
+                UpdateBehavior: "UPDATE_IN_DATABASE"
+                DeleteBehavior: "DEPRECATE_IN_DATABASE"
+            TablePrefix: "raw_"
+            Configuration: "{\"Version\":1.0,\"CreatePartitionIndex\":true}"
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2
+
+    GlueCrawler6:
+        Type: "AWS::Glue::Crawler"
+        Properties:
+            Name: !Sub "${CrawlerENV}-curated"
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            Targets: 
+                S3Targets: 
+                  - 
+                    Path: !Sub "s3://${BucketName}/data/curated/"
+            DatabaseName: !Sub "${DbENV}-curated"
+            SchemaChangePolicy: 
+                UpdateBehavior: "UPDATE_IN_DATABASE"
+                DeleteBehavior: "DEPRECATE_IN_DATABASE"
+            Configuration: "{\"Version\":1.0,\"CreatePartitionIndex\":true}"
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2
+
+    GlueCrawler7:
+        Type: "AWS::Glue::Crawler"
+        Properties:
+            Name: !Sub "${CrawlerENV}-pharma-clean"
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            Targets: 
+                S3Targets: 
+                  - 
+                    Path: !Sub "s3://${BucketName}/data/cleansed/pharma/"
+            DatabaseName: !Sub "${DbENV}-cleansed"
+            SchemaChangePolicy: 
+                UpdateBehavior: "UPDATE_IN_DATABASE"
+                DeleteBehavior: "DEPRECATE_IN_DATABASE"
+            TablePrefix: "clean_"
+            Configuration: "{\"Version\":1.0,\"CreatePartitionIndex\":true}"
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2
+
+    GlueCrawler8:
+        Type: "AWS::Glue::Crawler"
+        Properties:
+            Name: !Sub "${CrawlerENV}-pharma-raw"
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            Targets: 
+                S3Targets: 
+                  - 
+                    Path: !Sub "s3://${BucketName}/data/raw/pharma/"
+            DatabaseName: !Sub "${DbENV}-raw"
+            SchemaChangePolicy: 
+                UpdateBehavior: "UPDATE_IN_DATABASE"
+                DeleteBehavior: "DEPRECATE_IN_DATABASE"
+            TablePrefix: "raw_"
+            Configuration: "{\"Version\":1.0,\"CreatePartitionIndex\":true}"
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2
+
+    GlueCrawler9:
+        Type: "AWS::Glue::Crawler"
+        Properties:
+            Name: !Sub "${CrawlerENV}-trialtrove-clean"
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            Targets: 
+                S3Targets: 
+                  - 
+                    Path: !Sub "s3://${BucketName}/data/cleansed/trialtrove/"
+            DatabaseName: !Sub "${DbENV}-cleansed"
+            SchemaChangePolicy: 
+                UpdateBehavior: "UPDATE_IN_DATABASE"
+                DeleteBehavior: "DEPRECATE_IN_DATABASE"
+            TablePrefix: "clean_"
+            Configuration: "{\"Version\":1.0,\"CreatePartitionIndex\":true}"
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2
+
+    GlueCrawler10:
+        Type: "AWS::Glue::Crawler"
+        Properties:
+            Name: !Sub "${CrawlerENV}-trialtrove-raw"
+            Role: !ImportValue 
+                   'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            Targets: 
+                S3Targets: 
+                  - 
+                    Path: !Sub "s3://${BucketName}/data/raw/trialtrove/"
+            DatabaseName: !Sub "${DbENV}-raw"
+            SchemaChangePolicy: 
+                UpdateBehavior: "UPDATE_IN_DATABASE"
+                DeleteBehavior: "DEPRECATE_IN_DATABASE"
+            TablePrefix: "raw_"
+            Configuration: "{\"Version\":1.0,\"CreatePartitionIndex\":true}"
+            Tags:
+               env: !Ref TagValue1
+               cost_center: !Ref TagValue2

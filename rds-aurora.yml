@@ -1,0 +1,149 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CFN template - Aurora Postgres
+Parameters:
+  DBName:
+    Description: The database name for Aurora PostgreSQL DB instance
+    Type: String
+    Default: master
+  DBMasterUsername:
+    Description: The database master/super username.
+    Type: String
+    Default: master
+  DBMasterPassword:
+    Description: The password for database master/super user.
+    Type: String
+    Default: yo12whattheyom
+  DBInstanceClass:
+    Description: Database instance class
+    Type: String
+    Default: db.t3.medium
+  DBSubnetGroupName:
+    Type: String
+    Description: "RDS Cluster Subnet Group Name"
+    Default: apt-dev-rds-subnetgroup    
+  SubnetId1:
+    Description: Subnet ID in 1st AZ of your region
+    Type: String
+    Default: subnet-0c500765df0e514fc
+  SubnetId2:
+    Description: Subnet ID in 2nd AZ of your region
+    Type: String
+    Default: subnet-04d9237857c463aa7
+  SecurityGroupID:
+    Description: Security Group Name used by Aurora DB
+    Type: String
+    Default: sg-09c8aa0bc5e0b5ea2 
+  PortNumber:
+    Type: Number
+    Description: "Port Number."
+    Default: 5432        
+  # MultiAZ:
+  #   Description: true, in case you wish to have a multi-AZ deployment
+  #   Type: String
+  #   Default: false
+  BackupRetentionPeriod:
+    Description: "backup retention period" 
+    Type: Number
+    Default: 7
+  DBClusterIdentifier:
+    Description: "RDS Cluster name."
+    Type: String
+    Default: apt-dev-rds-db
+  DBClusterParameterGroupName:
+    Description: "paramater group name rds" 
+    Type: String
+    Default: default.aurora-postgresql14
+  Engine:
+    Description: Engine 
+    Type: String
+    Default: aurora-postgresql
+  EngineMode:
+    Description: EngineMode 
+    Type: String
+    Default: provisioned
+  EngineVersion:
+    Description: EngineVersion 
+    Type: String
+    Default: 14.6  
+  DBInstanceIdentifier:
+    Description: DBInstanceIdentifier 
+    Type: String
+    Default: mypostgresdb
+  TagKey1:
+    Type: String
+    Description: "Tag Key"
+    Default: env
+  TagValue1:
+    Type: String
+    Description: "Tag Value"
+    Default: dev
+  TagKey2:
+    Type: String
+    Description: "Tag Key"
+    Default: cost_center
+  TagValue2:
+    Type: String
+    Description: "Tag Value"
+    Default: apt        
+
+Resources:
+    RDSDBSubnetGroup:
+        Type: "AWS::RDS::DBSubnetGroup"
+        Properties:
+            DBSubnetGroupDescription: "RDS subnet group"
+            DBSubnetGroupName: !Ref DBSubnetGroupName
+            SubnetIds: 
+              - !Ref SubnetId1
+              - !Ref SubnetId2
+            Tags:
+              - Key: !Ref TagKey1
+                Value: !Ref TagValue1
+              - Key: !Ref TagKey2 
+                Value: !Ref TagValue2    
+
+    RDSDBCluster:
+        Type: AWS::RDS::DBCluster
+        Properties:
+            AvailabilityZones: 
+              #- !Sub "${AWS::Region}c"
+              - !Sub "${AWS::Region}b"
+              - !Sub "${AWS::Region}a"
+            BackupRetentionPeriod: !Ref BackupRetentionPeriod
+            DBClusterIdentifier: !Ref DBClusterIdentifier
+            DBClusterParameterGroupName: !Ref DBClusterParameterGroupName
+            DBSubnetGroupName: !Ref DBSubnetGroupName
+            DatabaseName: !Ref DBName
+            DeletionProtection: false
+            Engine: !Ref Engine
+            EngineMode: !Ref EngineMode
+            EngineVersion: !Ref EngineVersion
+            MasterUsername: !Ref DBMasterUsername
+            MasterUserPassword: !Ref DBMasterPassword
+            Port: !Ref PortNumber
+            SourceRegion: !Ref 'AWS::Region'
+            StorageEncrypted: true
+            VpcSecurityGroupIds:
+              - Ref: SecurityGroupID
+            Tags:
+              - Key: !Ref TagKey1
+                Value: !Ref TagValue1
+              - Key: !Ref TagKey2 
+                Value: !Ref TagValue2    
+        DependsOn: RDSDBSubnetGroup      
+
+    DBInstance:
+        Type: AWS::RDS::DBInstance
+        Properties:
+            DBClusterIdentifier: !Ref DBClusterIdentifier
+            DBInstanceIdentifier: !Sub "${DBClusterIdentifier}-instance"
+            DBInstanceClass: !Ref DBInstanceClass
+            Engine: !Ref Engine
+            #EnablePerformanceInsights: fasle
+            AutoMinorVersionUpgrade: true
+            PubliclyAccessible: false
+            Tags:
+              - Key: !Ref TagKey1
+                Value: !Ref TagValue1
+              - Key: !Ref TagKey2 
+                Value: !Ref TagValue2        
+        DependsOn: RDSDBCluster                

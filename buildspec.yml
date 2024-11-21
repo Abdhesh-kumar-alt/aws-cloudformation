@@ -1,0 +1,28 @@
+version: 0.2
+phases:
+  build:
+    commands:
+      - |
+          ASSUME_ROLE_ARN=$CROSSACCOUNTROLEARN
+          TEMP_ROLE=$(aws sts assume-role --role-arn $ASSUME_ROLE_ARN --role-session-name cfn)
+          export TEMP_ROLE
+          export AWS_ACCESS_KEY_ID=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.AccessKeyId')
+          export AWS_SECRET_ACCESS_KEY=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.SecretAccessKey')
+          export AWS_SESSION_TOKEN=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.SessionToken')
+      - aws sts get-caller-identity
+      - pwd
+      - ls  
+      #- aws cloudformation create-stack --stack-name apt-iam-stack --capabilities CAPABILITY_NAMED_IAM --template-body file:/${pwd}/iam.yml
+      #- aws cloudformation wait stack-create-complete --stack-name apt-iam-stack  
+      - aws cloudformation create-stack --stack-name apt-s3-stack --template-body file:/${pwd}/s3.yml
+      #- aws cloudformation create-stack --stack-name apt-ecr-stack --template-body file:/${pwd}/ecr.yml
+      #- aws cloudformation create-stack --stack-name apt-efs-stack --template-body file:/${pwd}/efs.yml
+      #- aws cloudformation create-stack --stack-name apt-redshift-stack --template-body file:/${pwd}/redshift.yml
+      #- aws cloudformation create-stack --stack-name apt-eks-stack --template-body file:/${pwd}/eks.yml
+      #- aws cloudformation create-stack --stack-name apt-ec2-app-stack --template-body file:/${pwd}/ec2-app.yml
+      ##- aws cloudformation create-stack --stack-name apt-ec2-eks-stack --template-body file:/${pwd}/ec2-eks.yml
+      #- aws cloudformation create-stack --stack-name apt-rds-stack --template-body file:/${pwd}/rds-aurora.yml    
+      #- aws cloudformation create-stack --stack-name apt-glue-job-stack --template-body file:/${pwd}/glue-job.yml
+      #- aws cloudformation create-stack --stack-name apt-glue-db-stack --template-body file:/${pwd}/glue-db.yml
+      #- aws cloudformation create-stack --stack-name apt-glue-crawler-stack --template-body file:/${pwd}/glue-crawler.yml
+

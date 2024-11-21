@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "efs-cf"
+Parameters:
+  EFS1:
+    Description: efs
+    Default: "apt-dev-efs-volume"
+    Type: String
+  PerformMode:
+    Description: performance mode
+    Default: "generalPurpose"
+    Type: String
+  ThroughPut:
+    Description: throughput mode
+    Default: "bursting"
+    Type: String        
+  TagKey1:
+    Type: String
+    Description: "Tag Key"
+    Default: env
+  TagValue1:
+    Type: String
+    Description: "Tag Value"
+    Default: dev
+  TagKey2:
+    Type: String
+    Description: "Tag Key"
+    Default: cost_center
+  TagValue2:
+    Type: String
+    Description: "Tag Value"
+    Default: apt        
+Resources:
+    EFSFileSystem:
+        Type: "AWS::EFS::FileSystem"
+        Properties:
+            PerformanceMode: !Ref PerformMode
+            Encrypted: true
+            ThroughputMode: !Ref ThroughPut
+            FileSystemTags: 
+              - 
+                Key: "Name"
+                Value: !Ref EFS1
+              - 
+                Key: !Ref TagKey1
+                Value: !Ref TagValue1
+              - 
+                Key: !Ref TagKey2 
+                Value: !Ref TagValue2                            
+            
