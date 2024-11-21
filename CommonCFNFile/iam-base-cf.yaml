@@ -1,0 +1,209 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "IAM ROLES CF"
+Parameters:
+  GlueIAMRole:
+    Type: String
+    Description: "GLUE IAM ROLE NAME"
+    Default: ceat-mdp-glue-role
+  GlueIAMPolicy:
+    Type: String
+    Description: "GLUE MANAGED POLICY NAME - GLUE FULL ACCESS"
+    Default: ceat-mdp-glue-iampolicy
+  RedshiftIAMRole:
+    Type: String
+    Description: "REDSHIFT IAM ROLE NAME"
+    Default: ceat-mdp-redshift-role
+  LambdaIAMRole:
+    Type: String
+    Description: "LAMBDA IAM ROLE NAME"
+    Default: ceat-mdp-lambda-role
+  DMSIAMRole:
+    Type: String
+    Description: "DMS IAM ROLE NAME"
+    Default: ceat-mdp-dms-role
+  DMSIAMPolicy:
+    Type: String
+    Description: "DMS MANAGED POLICY NAME - DMS FULL ACCESS"
+    Default: ceat-mdp-dms-iampolicy
+  DataBrewIAMRole:
+    Type: String
+    Description: "DataBrew Role"
+    Default: ceat-mdp-databrew-role   
+  TagKey:
+    Type: String
+    Description: "Tag Key"
+    Default: Lighthouse
+  TagValue:
+    Type: String
+    Description: "Tag Value"
+    Default: Foundational-IAM  
+Resources:
+### GLUE IAM ROLE ###
+    GlueRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/"
+            RoleName: !Ref GlueIAMRole
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"glue.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            Tags:
+              -
+                Key: !Ref TagKey
+                Value: !Ref TagValue
+            ManagedPolicyArns:
+              - !Ref GluePolicy
+              - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+              - "arn:aws:iam::aws:policy/CloudWatchFullAccess"
+              - "arn:aws:iam::aws:policy/AmazonAthenaFullAccess"
+            Description: "Allows Glue to call AWS services on your behalf. "
+        DependsOn: GluePolicy 
+    GluePolicy:
+        Type: "AWS::IAM::ManagedPolicy"
+        Properties:
+            ManagedPolicyName: !Ref GlueIAMPolicy
+            Path: "/"
+            PolicyDocument: |
+                {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "VisualEditor0",
+                            "Effect": "Allow",
+                            "Action": "glue:*",
+                            "Resource": "*"
+                        }
+                    ]
+                }
+
+### REDSHIFT IAM ROLE ###
+    RedshiftRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/"
+            RoleName: !Ref RedshiftIAMRole
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"redshift.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            Tags:
+              -
+                Key: !Ref TagKey
+                Value: !Ref TagValue
+            ManagedPolicyArns: 
+              - "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+              - "arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess"
+              - "arn:aws:iam::aws:policy/AmazonRedshiftAllCommandsFullAccess"
+            Description: "Allows Redshift clusters to call AWS services on your behalf."
+
+### DATABREW ROLE ###
+    DatabrewRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/"
+            RoleName: !Ref DataBrewIAMRole
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"databrew.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            Tags:
+              -
+                Key: !Ref TagKey
+                Value: !Ref TagValue
+            ManagedPolicyArns: 
+              - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+              - "arn:aws:iam::aws:policy/CloudWatchFullAccess"
+            Description: "Allows DataBrew to create and manage AWS resources on your behalf"
+
+### LAMBDA IAM ROLE ###
+    LambdaRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/"
+            RoleName: !Ref LambdaIAMRole
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            Tags:
+              -
+                Key: !Ref TagKey
+                Value: !Ref TagValue
+            ManagedPolicyArns: 
+              - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+              - "arn:aws:iam::aws:policy/AwsGlueDataBrewFullAccessPolicy"
+              - "arn:aws:iam::aws:policy/AWSLambda_FullAccess"
+              - "arn:aws:iam::aws:policy/CloudWatchFullAccess"
+              - "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
+              - "arn:aws:iam::aws:policy/AmazonSESFullAccess"
+              - !Ref DMSPolicy
+            Description: "Allows Lambda functions to call AWS services on your behalf."
+        DependsOn: DMSPolicy    
+### DMS IAM ROLE ###
+    DMSRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/"
+            RoleName: !Ref DMSIAMRole
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"dms.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            Tags:
+              -
+                Key: !Ref TagKey
+                Value: !Ref TagValue
+            ManagedPolicyArns: 
+              - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+              - "arn:aws:iam::aws:policy/service-role/AmazonDMSVPCManagementRole"
+              - !Ref DMSPolicy
+            Description: "Allows Database Migration Service to call AWS services on your behalf."
+        DependsOn: DMSPolicy   
+    DMSPolicy:
+        Type: "AWS::IAM::ManagedPolicy"
+        Properties:
+            ManagedPolicyName: !Ref DMSIAMPolicy
+            Path: "/"
+            PolicyDocument: |
+                {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "VisualEditor0",
+                            "Effect": "Allow",
+                            "Action": "dms:*",
+                            "Resource": "*"
+                        }
+                    ]
+                }
+
+Outputs: 
+  GlueRoleARN:
+    Description: ARN of Glue Role
+    Value: !GetAtt GlueRole.Arn
+    Export:
+      Name: 
+       'Fn::Sub': '${AWS::StackName}-GlueRoleArn'
+  GluePolicyARN:
+    Description: ARN of Glue Managed Policy
+    Value: !Ref GluePolicy
+  RedshiftRoleARN:
+    Description: ARN of Redshift Role 
+    Value: !GetAtt RedshiftRole.Arn
+    Export:
+      Name:
+       'Fn::Sub': '${AWS::StackName}-RedshiftRoleArn'       
+  LamdaRoleARN:
+    Description: ARN of Lambda Role
+    Value: !GetAtt LambdaRole.Arn
+    Export:
+      Name: 
+       'Fn::Sub': '${AWS::StackName}-LambdaRoleArn'         
+  DMSRoleARN:
+    Description: ARN of DMS Role
+    Value: !GetAtt DMSRole.Arn
+    Export:
+      Name: 
+       'Fn::Sub': '${AWS::StackName}-DMSRoleArn'
+  DMSPolicyARN:
+    Description: ARN of DMS Managed Policy
+    Value: !Ref DMSPolicy
+  DataBrewRoleARN:
+    Description: ARN of DataBrew Role
+    Value: !GetAtt DatabrewRole.Arn
+    Export:
+      Name: 
+       'Fn::Sub': '${AWS::StackName}-DataBrewRoleArn'    
+
+

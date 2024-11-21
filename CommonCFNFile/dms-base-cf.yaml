@@ -1,0 +1,216 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "DMS  BASE CF"
+Parameters: 
+### Target EP PARAMS ###
+  TargetEp1:
+    Type: String
+    Description: "Target  Endpoint name."
+    Default: ceat-mdp-halol-s3-ep
+  TargetEp2:
+    Type: String
+    Description: "Target  Endpoint name."
+    Default: ceat-mdp-chennai-s3-ep  
+  TargetEngineName:
+    Type: String
+    Description: "Engine Name -target 1"
+    Default: s3
+  TargetBucketName:
+    Type: String
+    Description: "Target S3 Bucket Name -target"
+    Default: ceat-mdp-raw-prd
+  Target1Folder:
+    Type: String
+    Description: "S3 Target Folder Name -target 1"
+    Default: halol
+  Target2Folder:
+    Type: String
+    Description: "S3 Target Folder Name -target 2"
+    Default: chennai
+### REP INSTANCE PARAMS ###    
+  # ReplicationInstanceName:
+  #   Type: String
+  #   Description: "Replication Instance name."
+  #   Default: ceat-mdp-repl-dms-instance
+  # InstanceClass:
+  #   Type: String
+  #   Description: "Replication Instance Class."
+  #   Default: "dms.c5.xlarge"  
+  # RepStorage:
+  #   Type: Number
+  #   Description: "Replication Instance Allocated Storage."
+  #   Default: 512 
+  # MaintenanceWindow: 
+  #   Type: String
+  #   Description: "Replication Instance Preffered Maintenance Window."
+  #   Default: "tue:11:52-tue:12:22"
+  # RepEngineVersion:
+  #   Type: String
+  #   Description: "Replication Instance Engine Version."
+  #   Default: "3.4.6"  
+### DMS EC2 SECURITY GROUP PARAMS ###    
+  # EC2SecurityGroupName:
+  #   Type: String
+  #   Description: "EC2 Security Group Name."
+  #   Default: ceat-mdp-dms-sec-group
+  # VPCid:
+  #   Type: String
+  #   Description: "VPC Id used by EC2"
+  #   Default: vpc-037fdf874a7669a3f
+### DMS REPLICATION SUBNET GROUP PARAMS ###    
+  # DMSReplicationSubnetGroupName:
+  #   Type: String
+  #   Description: "DMS Replication Subnet Group Name"
+  #   Default: ceat-mdp-dms-subnet-group
+  # Subnetid1:
+  #   Type: String
+  #   Description: "Subnet id 1 of DMS Replication Subnet Group"
+  #   Default: subnet-08fa96837aae7dffa
+  # Subnetid2:
+  #   Type: String
+  #   Description: "Subnet id 2 of DMS Replication Subnet Group"
+  #   Default: subnet-0073ec4da9fbbc5d4
+  #Subnetid3:
+  #  Type: String
+  #  Description: "Subnet id 3 of DMS Replication Subnet Group"
+  #  Default: subnet-0c2260fd42915a4d2
+### TAGS PARAMS ###    
+  TagKey:
+    Type: String
+    Description: "Tag Key"
+    Default: Lighthouse
+  TagValue:
+    Type: String
+    Description: "Tag Value"
+    Default: ceat-mdp
+### EXPORTED STACK PARAMS ###    
+  StackNameExport:
+    Type: String
+    Description: "Name of stack from where DMS Role ARN is exported"
+    Default: IAM-prod      
+  
+Resources:
+### DMS TARGET ENDPOINT HALOL ### 
+    DMSEndpointTar1:
+        Type: "AWS::DMS::Endpoint"
+        Properties:
+            EndpointIdentifier: !Ref TargetEp1
+            EndpointType: "target"
+            EngineName: !Ref TargetEngineName
+            ExtraConnectionAttributes: !Sub "addColumnName=true;bucketFolder=${Target1Folder};bucketName=${TargetBucketName};cdcMaxBatchInterval=900;cdcMinFileSize=1048576;compressionType=NONE;csvDelimiter=|;csvRowDelimiter=\\n;dataFormat=csv;datePartitionEnabled=false;includeOpForFullLoad=true;timestampColumnName=cdc_timestamp;"
+            SslMode: "none"
+            Tags:
+              -
+                Key: !Ref TagKey
+                Value: "ceat-mdp-hll"
+            S3Settings: 
+                BucketFolder: !Ref Target1Folder 
+                BucketName: !Ref TargetBucketName
+                CompressionType: "NONE"
+                CsvDelimiter: "|"
+                CsvRowDelimiter: "\\n"
+                ServiceAccessRoleArn: !ImportValue 
+                                       'Fn::Sub': '${StackNameExport}-DMSRoleArn'
+### DMS TARGET ENDPOINT CHENNAI ###  
+    DMSEndpointTar2:
+        Type: "AWS::DMS::Endpoint"
+        Properties:
+            EndpointIdentifier: !Ref TargetEp2
+            EndpointType: "target"
+            EngineName: !Ref TargetEngineName
+            ExtraConnectionAttributes: !Sub "bucketFolder=${Target2Folder};bucketName=${TargetBucketName};compressionType=NONE;csvDelimiter=|;csvRowDelimiter=\\n;datePartitionEnabled=false;"
+            SslMode: "none"
+            Tags: 
+              - 
+                Key: !Ref TagKey
+                Value: "ceat-mdp-chn"
+            S3Settings: 
+                BucketFolder: !Ref Target2Folder
+                BucketName: !Ref TargetBucketName
+                CompressionType: "NONE"
+                CsvDelimiter: "|"
+                CsvRowDelimiter: "\\n"
+                ServiceAccessRoleArn: !ImportValue
+                                       'Fn::Sub': '${StackNameExport}-DMSRoleArn'
+
+### DMS REPLICATION INSTANCE ###
+    # DMSReplicationInstance:
+    #     Type: "AWS::DMS::ReplicationInstance"
+    #     Properties:
+    #         ReplicationInstanceIdentifier: !Ref ReplicationInstanceName
+    #         ReplicationInstanceClass: !Ref InstanceClass
+    #         AllocatedStorage: !Ref RepStorage
+    #         VpcSecurityGroupIds: 
+    #           - !Ref EC2SecurityGroup
+    #         AvailabilityZone: !Sub "${AWS::Region}a"
+    #         ReplicationSubnetGroupIdentifier: !Ref DMSReplicationSubnetGroupName
+    #         Tags: 
+    #           - 
+    #             Key: !Ref TagKey
+    #             Value: !Ref TagValue
+    #         PreferredMaintenanceWindow: !Ref MaintenanceWindow
+    #         MultiAZ: false
+    #         EngineVersion: !Ref RepEngineVersion
+    #         AutoMinorVersionUpgrade: true
+    #         PubliclyAccessible: false
+    #     DependsOn: DMSReplicationSubnetGroup
+
+### DMS EC2 SECURITY GROUP ###
+    # EC2SecurityGroup:
+    #     Type: "AWS::EC2::SecurityGroup"
+    #     Properties:
+    #         GroupDescription: "ceat-mdp-dms-sec-group"
+    #         GroupName: !Ref EC2SecurityGroupName
+    #         Tags: 
+    #           - 
+    #             Key: !Ref TagKey
+    #             Value: !Ref TagValue
+    #         VpcId: !Ref VPCid
+    #         SecurityGroupIngress: 
+    #           - 
+    #             CidrIp: "0.0.0.0/0"
+    #             IpProtocol: "-1"
+    #         SecurityGroupEgress: 
+    #           - 
+    #             CidrIp: "0.0.0.0/0"
+    #             IpProtocol: "-1"
+                
+### DMS REPLICATION SUBNET GROUP ###                
+    # DMSReplicationSubnetGroup:
+    #     Type: "AWS::DMS::ReplicationSubnetGroup"
+    #     Properties:
+    #         ReplicationSubnetGroupIdentifier: !Ref DMSReplicationSubnetGroupName
+    #         ReplicationSubnetGroupDescription: "ceat-mdp-dms-subnet-group"
+    #         Tags:
+    #           -
+    #             Key: !Ref TagKey
+    #             Value: !Ref TagValue
+    #         SubnetIds:
+    #           - !Ref Subnetid1
+    #           - !Ref Subnetid2
+            #  - !Ref Subnetid3
+
+Outputs: 
+  DMSTargetEndpointHL:
+    Description: Target Endpoint of DMS Halol
+    Value: !Ref DMSEndpointTar1
+    Export:
+      Name: 
+       'Fn::Sub': '${AWS::StackName}-DMSTargetHLArn'
+  DMSTargetEndpointCH:
+    Description: Target Endpoint of DMS Chennai
+    Value: !Ref DMSEndpointTar2
+    Export:
+      Name:
+       'Fn::Sub': '${AWS::StackName}-DMSTargetCHArn'
+  # DMSReplicationInstance:
+  #   Description: DMS Replication Instance
+  #   Value: !Ref DMSReplicationInstance
+  #   Export:
+  #     Name:
+  #      'Fn::Sub': '${AWS::StackName}-DMSRepInstanceArn'
+  # SecurityGroup:
+  #   Description: EC2 Security Group
+  #   Value: !Ref EC2SecurityGroup
+  # SubnetGroup:
+  #   Description: DMS Replication Subnet Group
+  #   Value: !Ref DMSReplicationSubnetGroup

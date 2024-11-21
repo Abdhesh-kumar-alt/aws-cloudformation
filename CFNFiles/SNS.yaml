@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "ceat-mdp-halol-DMS-Prd-Failure"
+Parameters:
+  Topicname:
+    Type: String
+    Description: Topic Name
+    Default: "ceat-mdp-halol-DMS-Prd-Failure"
+Resources:
+    SNSTopic:
+        Type: "AWS::SNS::Topic"
+        Properties:
+            DisplayName: ""
+            TopicName: !Ref Topicname
+
+    SNSTopicPolicy:
+        Type: "AWS::SNS::TopicPolicy"
+        Properties:
+            PolicyDocument: !Sub "{\"Version\":\"2012-10-17\",\"Id\":\"__default_policy_ID\",\"Statement\":[{\"Sid\":\"__default_statement_ID\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"*\"},\"Action\":[\"SNS:GetTopicAttributes\",\"SNS:SetTopicAttributes\",\"SNS:AddPermission\",\"SNS:RemovePermission\",\"SNS:DeleteTopic\",\"SNS:Subscribe\",\"SNS:ListSubscriptionsByTopic\",\"SNS:Publish\"],\"Resource\":\"${SNSTopic}\",\"Condition\":{\"StringEquals\":{\"AWS:SourceOwner\":\"${AWS::AccountId}\"}}},{\"Sid\":\"dms-allow-publish\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"dms.amazonaws.com\"},\"Action\":\"sns:Publish\",\"Resource\":\"${SNSTopic}\"}]}"
+            Topics: 
+              - !Ref SNSTopic
+
+    SNSSubscription:
+        Type: "AWS::SNS::Subscription"
+        Properties:
+            TopicArn: !Ref SNSTopic
+            Endpoint: "tanmay.kale@lumiq.ai"
+            Protocol: "email"
+            Region: !Ref AWS::Region
+
+    SNSSubscription2:
+        Type: "AWS::SNS::Subscription"
+        Properties:
+            TopicArn: !Ref SNSTopic
+            Endpoint: "darshan.parekh@lumiq.ai"
+            Protocol: "email"
+            Region: !Ref AWS::Region
+
+    SNSSubscription3:
+        Type: "AWS::SNS::Subscription"
+        Properties:
+            TopicArn: !Ref SNSTopic
+            Endpoint: "harshit.tripathi@lumiq.ai"
+            Protocol: "email"
+            Region: !Ref AWS::Region
+
+    SNSSubscription4:
+        Type: "AWS::SNS::Subscription"
+        Properties:
+            TopicArn: !Ref SNSTopic
+            Endpoint: "ritika.choudhary@lumiq.ai"
+            Protocol: "email"
+            Region: !Ref AWS::Region
+
+    SNSSubscription5:
+        Type: "AWS::SNS::Subscription"
+        Properties:
+            TopicArn: !Ref SNSTopic
+            Endpoint: "abhinav.vasdev@lumiq.ai"
+            Protocol: "email"
+            Region: !Ref AWS::Region
+
+    SNSSubscription6:
+        Type: "AWS::SNS::Subscription"
+        Properties:
+            TopicArn: !Ref SNSTopic
+            Endpoint: "shaba.firdaus@lumiq.ai"
+            Protocol: "email"
+            Region: !Ref AWS::Region
+
+    SNSSubscription7:
+        Type: "AWS::SNS::Subscription"
+        Properties:
+            TopicArn: !Ref SNSTopic
+            Endpoint: "Chandan.md@ceat.com"
+            Protocol: "email"
+            Region: !Ref AWS::Region
+    SNSSubscription8:
+        Type: "AWS::SNS::Subscription"
+        Properties:
+            TopicArn: !Ref SNSTopic
+            Endpoint: "Navroj.jain@ceat.com"
+            Protocol: "email"
+            Region: !Ref AWS::Region
+    SNSSubscription9:
+        Type: "AWS::SNS::Subscription"
+        Properties:
+            TopicArn: !Ref SNSTopic
+            Endpoint: "Aryaka.Shandilya@ceat.com"
+            Protocol: "email"
+            Region: !Ref AWS::Region
+    SNSSubscription10:
+        Type: "AWS::SNS::Subscription"
+        Properties:
+            TopicArn: !Ref SNSTopic
+            Endpoint: "Anita.Desai@ceat.com"
+            Protocol: "email"
+            Region: !Ref AWS::Region
+    DMSEventSubscription:
+        Type: "AWS::DMS::EventSubscription"
+        Properties:
+            SnsTopicArn: !Ref SNSTopic
+            SourceType: "replication-task"
+            SourceIds: 
+              - "ceat-mdp-halol-utility-fl"
+              - "ceat-mdp-halol-tuprod-fl-and-inc"
+              - "ceat-mdp-halol-tcprod-fl-and-inc"
+              - "ceat-mdp-halol-tbprod-fl-and-inc"
+              - "ceat-mdp-halol-replication-table-fl-and-inc"
+              - "ceat-mdp-halol-mixer-sqlm-107-fl-and-inc"
+              - "ceat-mdp-halol-mixer-sqlm-106-fl-and-inc"
+              - "ceat-mdp-halol-mixer-sqlm-105-fl-and-inc"
+              - "ceat-mdp-halol-mixer-sqlm-104-fl-and-inc"
+              - "ceat-mdp-halol-mixer-sqlm-103-fl-and-inc"
+              - "ceat-mdp-halol-mixer-sqlm-102-fl-and-inc"
+              - "ceat-mdp-halol-fl-and-inc"
+              - "ceat-mdp-halol-energy-ceat-ems-fl-and-inc"
+              - "ceat-mdp-halol-ceat-fl"
+            EventCategories: 
+              - "failure"
+            Enabled: true
+

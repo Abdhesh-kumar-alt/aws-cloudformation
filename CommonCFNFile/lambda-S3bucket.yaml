@@ -1,0 +1,143 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Working with custom resources and S3
+Parameters:
+  S3BucketName:
+    Type: String
+    Description: "S3 bucket to create."
+    Default: "ceat-mdp-raw-prd"    
+  DirsToCreate:
+    Description: "Comma delimited list of directories to create."
+    Type: CommaDelimitedList
+    Default: "chennai,halol,nagpur,ceat-mdp-databrew-table-list-fl"
+  StackNameExport:
+    Type: String
+    Description: "Name of stack from where DMS Role ARN is exported"
+    Default: IAM-prod    
+
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+      Tags:
+              -
+                Key: Lighthouse
+                Value: ceat-mdp
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: 's3:ObjectCreated:*'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: chennai/
+            Function: arn:aws:lambda:ap-south-1:247607369165:function:ceat-mdp-chennai-trigger-databrew-jobs
+          - Event: 's3:ObjectCreated:*'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: halol/
+            Function: arn:aws:lambda:ap-south-1:247607369165:function:ceat-mdp-halol-trigger-databrew-jobs
+          - Event: 's3:ObjectCreated:*'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: nagpur/
+            Function: arn:aws:lambda:ap-south-1:247607369165:function:ceat-nagpur-trigger-databrew-jobs
+          - Event: 's3:ObjectCreated:*'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value:  ceat-mdp-databrew-table-list-fl/
+            Function: arn:aws:lambda:ap-south-1:247607369165:function:ceat-mdp-trigger-databrew-fl
+
+  S3InvokeLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: ceat-mdp-chennai-trigger-databrew-jobs
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub arn:aws:s3:::${S3BucketName}    
+
+  S3InvokeLambdaPermission2:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: ceat-mdp-halol-trigger-databrew-jobs
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub arn:aws:s3:::${S3BucketName} 
+
+  S3InvokeLambdaPermission3:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: ceat-nagpur-trigger-databrew-jobs
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub arn:aws:s3:::${S3BucketName}
+  S3InvokeLambdaPermission4:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: ceat-mdp-trigger-databrew-fl
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub arn:aws:s3:::${S3BucketName}
+     
+
+  S3CustomResource:
+    Type: Custom::S3CustomResource
+    Properties:
+      ServiceToken: !GetAtt AWSLambdaFunction.Arn
+      the_bucket: !Ref S3Bucket
+      dirs_to_create: !Ref DirsToCreate
+  
+  AWSLambdaFunction:
+     Type: "AWS::Lambda::Function"
+     Properties:
+       Description: "Work with S3 Buckets!"
+       Handler: index.handler
+       Role: !ImportValue 
+                 'Fn::Sub': '${StackNameExport}-LambdaRoleArn'
+       Timeout: 360
+       Runtime: python3.6
+       Code:
+         ZipFile: |
+          import boto3
+          import cfnresponse
+          def handler(event, context):
+              the_event = event['RequestType']
+              print("The event is: ", str(the_event))
+              response_data = {}
+              s_3 = boto3.client('s3')
+              # Retrieve parameters
+              the_bucket = event['ResourceProperties']['the_bucket']
+              dirs_to_create = event['ResourceProperties']['dirs_to_create']
+              try:
+                  if the_event in ('Create', 'Update'):
+                      print("Requested folders: ", str(dirs_to_create))
+                      for dir_name in dirs_to_create:
+                          print("Creating: ", str(dir_name))
+                          s_3.put_object(Bucket=the_bucket,
+                                         Key=(dir_name
+                                              + '/'))
+                  elif the_event == 'Delete':
+                      print("Deleting S3 content...")
+                      b_operator = boto3.resource('s3')
+                      b_operator.Bucket(str(the_bucket)).objects.all().delete()
+                  # Everything OK... send the signal back
+                  print("Operation successful!")
+                  cfnresponse.send(event,
+                                   context,
+                                   cfnresponse.SUCCESS,
+                                   response_data)
+              except Exception as e:
+                  print("Operation failed...")
+                  print(str(e))
+                  response_data['Data'] = str(e)
+                  cfnresponse.send(event,
+                                   context,
+                                   cfnresponse.FAILED,
+                                   response_data)
+

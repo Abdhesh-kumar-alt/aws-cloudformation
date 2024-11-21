@@ -1,0 +1,143 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "ceat-mdp-databrew-monitoring-ses"
+Parameters:
+    LambdaFunctionName:
+      Type: String
+      Description: "NAME OF THE LAMBDA FUNCTION"
+      Default: "ceat-mdp-databrew-monitoring-ses"
+    LambdaEmphemeralSize:
+      Type: Number
+      Description: "SIZE OF THE EMPHEMERAL STORAGE"
+      Default: 512
+    LambdaMemory:
+      Type: Number
+      Description: "MEMORY SIZE"
+      Default: 128  
+    LambdaTracingConfigMode:
+      Type: String
+      Description: ""
+      Default: PassThrough
+    EventsRuleName:
+      Type: String
+      Description: "Rule Name"
+      Default: ceat-mdp-databrew-monitoring-trigger
+    StackNameExport:
+      Type: String
+      Description: "NAME OF THE STACK FROM WHERE ARN IS EXPORTED"
+      Default: IAM-prod
+    TagKey:
+      Type: String
+      Description: "Tag Key"
+      Default: Lighthouse
+    TagValue:
+      Type: String
+      Description: "Tag Value"
+      Default: ceat-mdp 
+Resources:
+    LambdaFunction:
+        Type: "AWS::Lambda::Function"
+        Properties:
+            Description: ""
+            FunctionName: !Ref LambdaFunctionName
+            Handler: "index.lambda_handler"
+            Tags:
+              -
+                Key: !Ref TagKey
+                Value: !Ref TagValue
+            Architectures: 
+              - "x86_64"
+            Code:
+              ZipFile:  |  
+                  import json
+                  import boto3
+                  from botocore.exceptions import ClientError
+
+                  def lambda_handler(event, context):
+                      job=  event['detail']['jobName']
+                      jobRunId=  event['detail']['jobRunId']
+                      state=  event['detail']['state']
+                      time=  event['time']
+                      message= event['detail']['message']
+                      ExtractingPlantName=  job
+                      plantData=  ExtractingPlantName.split("-")
+                      plant=  plantData[0]
+                      print(plant)
+                      
+                      
+                      #message=  'Hi, Your Job '+job+' with JobRunId - '+jobRunId+' on dataset - '+dataset+' with ruleset - '+ruleset+' is in '+validationState+' state'
+                      #message=  f"<h4>Hi,<br>Below Job is in {validationState} state</h4><ul><li>JobName - {job}</li><li>JobRunId - {jobRunId}</li><li>dataset - {dataset}</li><li>ruleset - {ruleset}</li><ul>"
+                      #message=  f"<h4 color:black>Hi, <br>Below Job is in {validationState} state</h4><TABLE border='1'><TR><TH>Parameters</TH><TH>Details</TH></TR><TR><TD>JobName</TD><TD>{job}</TD></TR><TR><TD>JobRunId</TD><TD>{jobRunId}</TD></TR><TR><TD>Dataset</TD><TD>{dataset}</TD></TR><TR><TD>Ruleset</TD><TD>{ruleset}</TD></TR><TR><TD>DateTime</TD><TD>{time}</TD></TABLE>"
+
+                      message= f"<h4 color:black>Hi, <br>Below Job is in {state} state</h4><TABLE border='1'><TR><TH>Parameters</TH><TH>Details</TH></TR><TR><TD>JobName</TD><TD>{job}</TD></TR><TR><TD>JobRunId</TD><TD>{jobRunId}</TD></TR><TR><TD>message</TD><TD>{message}</TD></TR><TR><TD>DateTime</TD><TD>{time}</TD></TR></TABLE>"   
+                                  
+                      ses = boto3.client('ses')
+                      
+                        
+                      if plant == "halol":
+                        requiredEmails= ['abhinav.vasdev@lumiq.ai','tanmay.kale@lumiq.ai','ritika.choudhary@lumiq.ai','harshit.tripathi@lumiq.ai','harsha.varun@lumiq.ai']
+                      elif plant == "chennai":
+                          requiredEmails= ['abhinav.vasdev@lumiq.ai','tanmay.kale@lumiq.ai','ritika.choudhary@lumiq.ai','harshit.tripathi@lumiq.ai','harsha.varun@lumiq.ai']
+                      elif plant == "nagpur":
+                          requiredEmails= ['abhinav.vasdev@lumiq.ai','tanmay.kale@lumiq.ai','ritika.choudhary@lumiq.ai','harshit.tripathi@lumiq.ai','harsha.varun@lumiq.ai']
+                      else:
+                          requiredEmails= []
+      
+                      if bool(requiredEmails):
+                          try:
+                              response= ses.send_email(
+                              Source = 'ritika.choudhary@lumiq.ai',
+                          
+                              Destination = {
+                                'ToAddresses':requiredEmails
+                              },
+                              Message = {
+                                'Subject': {
+                                  'Data': 'DataBrew Alert Mail',
+                                  'Charset': 'UTF-8'
+                                },
+                                'Body': {
+
+                                  'Html':{
+                                    'Data': message,
+                                    'Charset': 'UTF-8'
+                                  }
+                                }
+                              }
+                            )
+          
+      
+        
+                          except ClientError as e:
+                            print(e.response['Error']['Message'])
+                          else:
+                            print("Email sent! Message ID:"),
+                            print(response['MessageId'])
+            
+            MemorySize: !Ref LambdaMemory
+            Role: !ImportValue
+                      'Fn::Sub': '${StackNameExport}-LambdaRoleArn'
+            Runtime: "python3.8"
+            Timeout: 60
+            TracingConfig: 
+                Mode: "PassThrough"
+            EphemeralStorage: 
+                Size: !Ref LambdaEmphemeralSize
+    EventsRule:
+        Type: "AWS::Events::Rule"
+        Properties:
+            Name: !Ref EventsRuleName
+            EventPattern: "{\"source\":[\"aws.databrew\"],\"detail-type\":[\"DataBrew Job State Change\"],\"detail\":{\"state\":[\"FAILED\",\"TIMEOUT\",\"STOPPED\"]}}"
+            State: "ENABLED"
+            Targets: 
+              - 
+                Arn: !GetAtt LambdaFunction.Arn
+                Id: "Id77761f0c-a5a4-48b9-a73d-d0ef6ecb63ad"
+            EventBusName: "default"    
+    InvokeLambdaPermission:
+        Type: AWS::Lambda::Permission
+        Properties:
+            Action: lambda:InvokeFunction
+            FunctionName: !Ref LambdaFunctionName
+            Principal: events.amazonaws.com
+            SourceArn: !GetAtt EventsRule.Arn        
+

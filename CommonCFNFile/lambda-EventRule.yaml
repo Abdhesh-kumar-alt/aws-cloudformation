@@ -1,0 +1,125 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Lambda -DMSTask EventBridge -TriggerLambda"
+Parameters:
+### LAMBDA PARAMS ###
+  LambdaName:
+    Type: String
+    Description: "Lambda function name. -dmstask"
+    Default: ceat-mdp-chennai-trigger-dms-cts-fl
+  FuncMemory:
+    Type: Number
+    Description: "Funtion Memory -RAM"
+    Default: 128
+### EVENTBRIDGE PARAMS ###    
+  EventRuleName:
+    Type: String
+    Description: "EvenBridge Rule Name"
+    Default: ceat-mdp-chennai-dms-task-fl-trigger    
+  EventBus: 
+    Type: String
+    Description: "EvenBus Name"
+    Default: default
+  ScheduleTime:
+    Type: String
+    Description: "Rule Schedule Expression"
+    Default: rate(1 day)
+### TAG PARAMS ###    
+  TagKey:
+    Type: String
+    Description: "Tag Key"
+    Default: Lighthouse
+  TagValue:
+    Type: String
+    Description: "Tag Value"
+    Default: ceat-mdp-chn
+### EXPORTED STACK PARAMS ###    
+  StackNameExport:
+    Type: String
+    Description: "Name of stack from where LambdaRole ARN is exported"
+    Default: IAM-prod
+Resources:
+### LAMBDA FUNCTION ###
+    LambdaFunction:
+        Type: "AWS::Lambda::Function"
+        Properties:
+            Description: ""
+            FunctionName: !Ref LambdaName
+            Handler: "index.lambda_handler"
+            Architectures: 
+              - "x86_64"
+            Code: 
+              ZipFile: |
+                import sys
+                import boto3
+                import logging
+
+                # Set Logging level
+                logger = logging.getLogger()
+                logger.setLevel(logging.INFO)
+
+                dms_client = boto3.client('dms')
+
+                def lambda_handler(event, context):
+
+                  logger.info('## EVENT')
+                  logger.info(event)
+
+                  logger.info('Trying to Start DMS Replication task')
+                  try:
+                      dms_task_arn =  "arn:aws:dms:ap-south-1:247607369165:task:MDSKVVE6CFZ5F3ICXHPZP5PAZVPRNARNKHKRGAQ"
+                      
+                      # Start dms replication task-full load for ETF Tables
+                      response = dms_client.start_replication_task(
+                                              ReplicationTaskArn=dms_task_arn,
+                                              StartReplicationTaskType='reload-target'
+                                          )
+                      logger.info(response)
+                     
+                      return('success')
+                  except Exception as e:
+                      logger.info(f'Exception encountered: {e}')
+                      error = 'Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e
+                      logger.info(f"Error: {error}")
+                      raise Exception("Could not start dms replication task")                   
+            MemorySize: !Ref FuncMemory
+            Role: !ImportValue 
+              'Fn::Sub': '${StackNameExport}-LambdaRoleArn'       
+            Runtime: "python3.9"
+            Timeout: 3
+            TracingConfig: 
+                Mode: "PassThrough"
+            EphemeralStorage: 
+                Size: 512
+            Tags:
+              -
+                Key: !Ref TagKey
+                Value: !Ref TagValue    
+    EventsRule:
+        Type: "AWS::Events::Rule"
+        Properties:
+            Name: !Ref EventRuleName
+            Description: "ceat-mdp-chennai-dms-task-fl trigger"
+            ScheduleExpression: !Ref ScheduleTime
+            State: "ENABLED"
+            Targets: 
+              - 
+                Arn: !GetAtt LambdaFunction.Arn
+                Id: "12a51d27-9472-463f-b8b2-c4dfb3c94a77"
+            EventBusName: !Ref EventBus
+    
+    InvokeLambdaPermission:
+      Type: AWS::Lambda::Permission
+      Properties:
+        Action: lambda:InvokeFunction
+        FunctionName: !Ref LambdaName
+        Principal: events.amazonaws.com
+        SourceArn: !GetAtt EventsRule.Arn           
+
+Outputs: 
+  LambdaARN:
+    Description: ARN of Lambda
+    Value: !GetAtt LambdaFunction.Arn
+  EventRuleArn:
+    Description: ARN of EventRule
+    Value: !GetAtt EventsRule.Arn
+

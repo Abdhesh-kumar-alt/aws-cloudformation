@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  S3Bucket1:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: ceat-mdp-artifacts-prd
+      Tags:
+              -
+                Key: Lighthouse
+                Value: ceat-mdp
+    DependsOn: S3Bucket3  
+  S3Bucket2:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: ceat-mdp-cleansed-prd
+      Tags:
+              -
+                Key: Lighthouse
+                Value: ceat-mdp
+    DependsOn: S3Bucket3  
+  S3Bucket3:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: ceat-mdp-curated-prd
+      Tags:
+              -
+                Key: Lighthouse
+                Value: ceat-mdp

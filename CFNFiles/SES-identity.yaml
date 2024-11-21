@@ -1,0 +1,167 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "identities-ses"
+Parameters:
+    SesIdentity1:
+      Type: String
+      Description: "Email SeS"
+      Default: "Ganesh.Bhat@ceat.com"
+    SesIdentity2:
+      Type: String
+      Description: "Email SeS"
+      Default: "abhinav.vasdev@lumiq.ai"
+    SesIdentity3:
+      Type: String
+      Description: "Email SeS"
+      Default: "tanmay.kale@lumiq.ai"
+    SesIdentity4:
+      Type: String
+      Description: "Email SeS"
+      Default: "Karandeep.Singh@ceat.com"
+    SesIdentity5:
+      Type: String
+      Description: "Email SeS"
+      Default: "ritika.choudhary@lumiq.ai"
+    SesIdentity6:
+      Type: String
+      Description: "Email SeS"
+      Default: "Namrata.Gore@ceat.com"
+    SesIdentity7:
+      Type: String
+      Description: "Email SeS"
+      Default: "Dinesh.S@ceat.com"
+    SesIdentity8:
+      Type: String
+      Description: "Email SeS"
+      Default: "Shaba.firdaus@lumiq.ai"
+    SesIdentity9:
+      Type: String
+      Description: "Email SeS"
+      Default: "Darshan.parekh@lumiq.ai"
+    SesIdentity10:
+      Type: String
+      Description: "Email SeS"
+      Default: "chennai.lighthouse@ceat.com" 
+    SesIdentity11:
+      Type: String
+      Description: "Email SeS"
+      Default: "aryaka.shandilya@ceat.com" 
+    SesIdentity12:
+      Type: String
+      Description: "Email SeS"
+      Default: "Anita.Desai@ceat.com" 
+    SesIdentity13:
+      Type: String
+      Description: "Email SeS"
+      Default: "harshit.tripathi@lumiq.ai" 
+    SesIdentity14:
+      Type: String
+      Description: "Email SeS"
+      Default: "lighthouse_halol@ceat.com" 
+    SesIdentity15:
+      Type: String
+      Description: "Email SeS"
+      Default: "navroj.jain@ceat.com" 
+    SesIdentity16:
+      Type: String
+      Description: "Email SeS"
+      Default: "aniket.khadse@ceat.com" 
+    SesIdentity17:
+      Type: String
+      Description: "Email SeS"
+      Default: "aayushi.dongre@ceat.com" 
+                                                        
+
+Resources:
+    SeSMailIdentity1:
+        Type: AWS::SES::EmailIdentity
+        Properties: 
+           EmailIdentity: !Ref SesIdentity1
+            
+    SeSMailIdentity2:
+        Type: AWS::SES::EmailIdentity
+        Properties: 
+           EmailIdentity: !Ref SesIdentity2
+            
+
+    SeSMailIdentity3:
+        Type: AWS::SES::EmailIdentity
+        Properties: 
+           EmailIdentity: !Ref SesIdentity3
+            
+
+    SeSMailIdentity4:
+        Type: AWS::SES::EmailIdentity
+        Properties: 
+           EmailIdentity: !Ref SesIdentity4
+            
+
+    SeSMailIdentity5:
+        Type: AWS::SES::EmailIdentity
+        Properties: 
+           EmailIdentity: !Ref SesIdentity5
+            
+
+    SeSMailIdentity6:
+        Type: AWS::SES::EmailIdentity
+        Properties: 
+           EmailIdentity: !Ref SesIdentity6
+            
+
+    SeSMailIdentity7:
+        Type: AWS::SES::EmailIdentity
+        Properties: 
+           EmailIdentity: !Ref SesIdentity7 
+                      
+
+    SeSMailIdentity8:
+        Type: AWS::SES::EmailIdentity
+        Properties: 
+           EmailIdentity: !Ref SesIdentity8
+            
+
+    SeSMailIdentity9:
+        Type: AWS::SES::EmailIdentity
+        Properties: 
+           EmailIdentity: !Ref SesIdentity9
+            
+
+    SeSMailIdentity10:
+        Type: AWS::SES::EmailIdentity
+        Properties: 
+           EmailIdentity: !Ref SesIdentity10 
+            
+    SeSMailIdentity11:
+        Type: AWS::SES::EmailIdentity
+        Properties: 
+           EmailIdentity: !Ref SesIdentity11
+            
+    SeSMailIdentity12:
+        Type: AWS::SES::EmailIdentity
+        Properties: 
+           EmailIdentity: !Ref SesIdentity12
+            
+    SeSMailIdentity13:
+        Type: AWS::SES::EmailIdentity
+        Properties: 
+           EmailIdentity: !Ref SesIdentity13
+            
+    SeSMailIdentity14:
+        Type: AWS::SES::EmailIdentity
+        Properties: 
+           EmailIdentity: !Ref SesIdentity14
+            
+    SeSMailIdentity15:
+        Type: AWS::SES::EmailIdentity
+        Properties: 
+           EmailIdentity: !Ref SesIdentity15
+            
+    SeSMailIdentity16:
+        Type: AWS::SES::EmailIdentity
+        Properties: 
+           EmailIdentity: !Ref SesIdentity16
+            
+    SeSMailIdentity17:
+        Type: AWS::SES::EmailIdentity
+        Properties: 
+           EmailIdentity: !Ref SesIdentity17   
+              

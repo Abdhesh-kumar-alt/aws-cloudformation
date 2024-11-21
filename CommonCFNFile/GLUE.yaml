@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "GLUE ceat-mdp-chennai-ct-scrap-curated"
+Parameters:
+### GLUE JOB PARAMS ###
+  JobName:
+    Type: String
+    Description: "Glue Job name."
+    Default: ceat-mdp-chennai-ct-scrap-curated-job
+  GlueJobScriptLocation:
+    Type: String
+    Description: "Glue Job Script Location"
+    Default: s3://ceat-mdp-raw-prd/glue_scripts/ceat_mdp/ceat-mdp-chennai-ct-scrap-curated-job.py
+  GlueJobTempDir:
+   Type: String
+   Description: "Glue Job Temp Directory"
+   Default: "s3://ceat-mdp-raw-prd/temp"
+  Maxretries:
+   Type: Number
+   Description: "Maximum Retries"
+   Default: 0 
+  Glueversion:
+   Type: String
+   Description: "Glue Version"
+   Default: "3.0"
+  Numberofworkers:
+   Type: Number
+   Description: "Number of Workers"
+   Default: 10 
+  Workertype: 
+   Type: String
+   Description: "Worker Type"
+   Default: "G.1X"
+  InputBucket: 
+   Type: String
+   Description: "Input Bucket glue script"
+   Default: "s3://ceat-mdp-cleansed-prd/"
+  OutputBucket:
+   Type: String
+   Description: "Output Bucket glue script"
+   Default: "s3://ceat-mdp-curated-prd/"  
+### GLUE CRAWLER PARAMS ###   
+  CrawlerName:
+    Type: String
+    Description: "Glue Crawler name."
+    Default: ceat-mdp-chennai-ct-scrap-curated   
+  GlueCrawlerS3Path: 
+   Type: String
+   Description: "Glue Crawler S3 target Path"
+   Default: "s3://ceat-mdp-curated-prd/chennai/ct_scrap"
+  GlueCrawlerDBName:
+   Type: String
+   Description: "Glue Crawler Database Name"
+   Default: ceat_mdp_model 
+  Tableprefix: 
+   Type: String
+   Description: "Table Prefix"
+   Default: "chennai_"
+### GLUE TRIGGER PARAMS ###
+  TriggerName:
+    Type: String
+    Description: "Glue Trigger name."
+    Default: chennai-ct-scrap-model-trigger   
+### TAG PARAMS ###   
+  TagKey:
+    Type: String
+    Description: "Tag Key"
+    Default: Lighthouse
+  TagValue:
+    Type: String
+    Description: "Tag Value"
+    Default: ceat-mdp-chn
+### EXPORTED STACK PARAMS ###    
+  StackNameExport:
+    Type: String
+    Description: "Name of stack from where Glue ARN is exported"
+    Default: IAM-prod  
+
+### GLUE JOB CHENNAI ###
+Resources:
+    GlueJob:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: !Ref JobName
+            Role: !ImportValue 
+                  'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Ref GlueJobScriptLocation
+                PythonVersion: "3"
+            DefaultArguments: 
+                --TempDir: !Ref GlueJobTempDir
+                --enable-continuous-cloudwatch-log: "true"
+                --input_bucket: !Ref InputBucket
+                --job-bookmark-option: "job-bookmark-disable"
+                --job-language: "python"
+                --output_bucket: !Ref OutputBucket
+            MaxRetries: !Ref Maxretries
+            #AllocatedCapacity: 10
+            Timeout: 2880
+            GlueVersion: !Ref Glueversion
+           # MaxCapacity: 10
+            NumberOfWorkers: !Ref Numberofworkers
+            WorkerType: !Ref Workertype
+            Tags: {
+        "Lighthouse": "ceat-mdp-chn-ctscrap",
+                  }
+                
+
+### GLUE CRAWLER CHENNAI ###
+    GlueCrawler:
+        Type: "AWS::Glue::Crawler"
+        Properties:
+            Name: !Ref CrawlerName
+            Role: !ImportValue 
+                  'Fn::Sub': '${StackNameExport}-GlueRoleArn'
+            Targets: 
+                S3Targets: 
+                  - 
+                    Path: !Ref GlueCrawlerS3Path
+            DatabaseName: !Ref GlueCrawlerDBName
+            SchemaChangePolicy: 
+                UpdateBehavior: "UPDATE_IN_DATABASE"
+                DeleteBehavior: "DEPRECATE_IN_DATABASE"
+            TablePrefix: !Ref Tableprefix
+            Tags: {
+        "Lighthouse": "ceat-mdp-chn-ctscrap",
+                  }
+    
+    GlueTrigger:
+        Type: "AWS::Glue::Trigger"
+        Properties:
+            Name: !Ref TriggerName
+            Type: "SCHEDULED"
+            Schedule: "cron(00 * * * ? *)"
+            StartOnCreation: true
+            Tags: {
+        "Lighthouse": "ceat-mdp-chn-ctscrap",
+                  }
+            Actions: 
+               - JobName: !Ref JobName

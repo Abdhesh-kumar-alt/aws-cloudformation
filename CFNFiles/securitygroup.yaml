@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "DMS SecurityGroup"
+Parameters:     
+  EC2SecurityGroupName:
+    Type: String
+    Description: "EC2 Security Group Name."
+    Default: ceat-mdp-dms-sec-group
+  VPCid:
+    Type: String
+    Description: "VPC Id used by EC2"
+    Default: vpc-0b8d674c3b4419193   
+  TagKey:
+    Type: String
+    Description: "Tag Key"
+    Default: Lighthouse
+  TagValue:
+    Type: String
+    Description: "Tag Value"
+    Default: ceat-mdp  
+  StackNameExport:
+    Type: String
+    Description: "Name of stack from where DMS Role ARN is exported"
+    Default: IAM-prod     
+  
+Resources:
+    EC2SecurityGroup:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: "ceat-mdp-dms-sec-group"
+            GroupName: !Ref EC2SecurityGroupName
+            Tags: 
+              - 
+                Key: !Ref TagKey
+                Value: !Ref TagValue
+            VpcId: !Ref VPCid
+            SecurityGroupIngress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                IpProtocol: "-1"
+            SecurityGroupEgress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                IpProtocol: "-1"
+                
+Outputs: 
+  SecurityGroup:
+    Description: EC2 Security Group
+    Value: !Ref EC2SecurityGroup
+    

@@ -1,0 +1,156 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "RedShift CF"
+Parameters:
+### REDSHIFT CLUSTER PARAMS ###
+  ClusterName:
+    Type: String
+    Description: "Redshift Cluster name."
+    Default: ceat-mdp-redshift-cluster
+  Nodetype:  
+    Type: String
+    Description: "Redshift Cluster Node Type."
+    Default: "dc2.large"   
+  Masterusername:
+    Type: String
+    Description: "Master Username."
+    Default: ceatmdpuser
+  Masterpassword:
+    Type: String
+    Description: "Master Password."
+    Default: Password!123
+  DataBaseName: 
+    Type: String
+    Description: "Name of DataBase."
+    Default: prod
+  PortNumber:
+    Type: Number
+    Description: "Port Number."
+    Default: 5439
+  Clustertype:   
+    Type: String
+    Description: "Redshift Cluster Type."
+    Default: "single-node"
+  SnapShotRetention:
+    Type: Number
+    Description: "Automated SnapShot Retention Period."
+    Default: 1
+  # VPCSecurityGroupid:
+  #   Type: String
+  #   Description: "VPC Security Group Id."
+  #   Default: sg-04d04b5295578ecc3
+  RedshiftClusterSubnetGroupName:
+    Type: String
+    Description: "Redshift Cluster Subnet Group Name"
+    Default: ceat-mdp-cluster-subnet-group
+  MaintenanceWindow: 
+    Type: String
+    Description: "Redshift Cluster Preffered Maintainance Time"
+    Default: "thu:05:00-thu:05:30" 
+  Clusterversion:
+    Type: String
+    Description: "Redshift Cluster Version"
+    Default: "1.0"  
+ ### REDSHIFT CLUSTER SUBNET GROUP PARAMS###   
+  Subnetid1:
+    Type: String
+    Description: "Subnet id 1"
+    Default: subnet-0073ec4da9fbbc5d4
+  Subnetid2:
+    Type: String
+    Description: "Subnet id 2"
+    Default: subnet-08fa96837aae7dffa
+  #Subnetid3:
+  #  Type: String
+  #  Description: "Subnet id 3"
+  #  Default: subnet-0c2260fd42915a4d2
+### TAGS PARAMS ###    
+  TagKey:
+    Type: String
+    Description: "Tag Key"
+    Default: Lighthouse
+  TagValue:
+    Type: String
+    Description: "Tag Value"
+    Default: ceat-mdp
+### EXPORTED STACK PARAMS ###     
+  StackNameExport:
+    Type: String
+    Description: "Name of stack from where RedshiftRole ARN is exported"
+    Default: IAM-prod   
+    
+Resources:
+### REDSHIFT CLUSTER ###
+    RedshiftCluster:
+        Type: "AWS::Redshift::Cluster"
+        Properties:
+            ClusterIdentifier: !Ref ClusterName  
+            NodeType: !Ref Nodetype
+            MasterUsername: !Ref Masterusername
+            MasterUserPassword: !Ref Masterpassword
+            DBName: !Ref DataBaseName
+            Port: !Ref PortNumber
+            ClusterType: !Ref Clustertype
+            AutomatedSnapshotRetentionPeriod: !Ref SnapShotRetention
+            Tags:
+              -
+                Key: !Ref TagKey
+                Value: !Ref TagValue
+            VpcSecurityGroupIds: 
+              - !Ref RedshiftSecurityGroup
+            ClusterSubnetGroupName: !Ref RedshiftClusterSubnetGroup
+            AvailabilityZone: !Sub "${AWS::Region}b"
+            PreferredMaintenanceWindow: !Ref MaintenanceWindow
+            ClusterVersion: !Ref Clusterversion
+            AllowVersionUpgrade: true
+            PubliclyAccessible: true
+            Encrypted: false
+            IamRoles: 
+              - !ImportValue 
+                'Fn::Sub': '${StackNameExport}-RedshiftRoleArn'
+        DependsOn: RedshiftClusterSubnetGroup
+### REDSHIFT CLUSTER SUBNET GROUP ###
+    RedshiftClusterSubnetGroup:
+        Type: "AWS::Redshift::ClusterSubnetGroup"
+        Properties:
+            Description: "ceat-mdp-cluster-subnet-group"
+            SubnetIds: 
+              - !Ref Subnetid1
+              - !Ref Subnetid2
+              #- !Ref Subnetid3
+
+            Tags:
+              - 
+                Key: !Ref TagKey
+                Value: !Ref TagValue
+
+    RedshiftSecurityGroup: 
+        Type: AWS::EC2::SecurityGroup 
+        Properties: 
+          GroupDescription: Enable JDBC port
+          GroupName : ceat-mdp-redshift-sec-group
+          VpcId: vpc-08aa65f0fdaa018f3
+          SecurityGroupIngress: 
+            - 
+              CidrIp: 0.0.0.0/0
+              FromPort: 5439 
+              ToPort: 5439 
+              IpProtocol: tcp 
+              Description: IP address for your dev machine 
+
+    InternalSecurityGroupIngress:
+        Type: AWS::EC2::SecurityGroupIngress
+        Properties:
+          IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          SourceSecurityGroupId: !Ref RedshiftSecurityGroup
+          GroupId: !Ref RedshiftSecurityGroup            
+
+
+Outputs: 
+  RedshiftCluster:
+    Description: RedShift Cluster Info
+    Value: !Ref RedshiftCluster
+  RedShiftSubnets:
+    Description: RedShift cluster Subnets Info
+    Value: !Ref RedshiftClusterSubnetGroup

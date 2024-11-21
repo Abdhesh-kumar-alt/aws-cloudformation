@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "ceat-mdp-cloudtrail"
+Parameters:
+    Trail:
+      Type: String
+      Description: "NAME OF THE TRAIL"
+      Default: "ceat-mdp-glue-monitoring-ses"
+    BucketName:
+      Type: String
+      Description: "NAME OF THE BUCKET"
+      Default: "ceat-mdp-raw"
+    S3KeyName:
+      Type: String
+      Description: "NAME OF S3 PREFIX KEY"
+      Default: "dad-logs"
+      
+Resources:
+    CloudTrailTrail:
+        Type: "AWS::CloudTrail::Trail"
+        Properties:
+            TrailName: !Ref Trail
+            S3BucketName: !Ref BucketName
+            S3KeyPrefix: !Ref S3KeyName
+            IncludeGlobalServiceEvents: true
+            IsMultiRegionTrail: true
+            EnableLogFileValidation: false
+            IsLogging: true
